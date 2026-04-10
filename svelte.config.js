@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-node';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -7,9 +7,8 @@ const config = {
 		runes: ({ filename }) => (filename.split(/[/\\]/).includes('node_modules') ? undefined : true)
 	},
 	kit: {
-		// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
-		// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
-		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
+		// Node adapter — this tool is self-hosted, so we output a Node server
+		// that can run behind a reverse proxy. See https://svelte.dev/docs/kit/adapter-node.
 		adapter: adapter(),
 
 		typescript: {
@@ -17,6 +16,21 @@ const config = {
 				...config,
 				include: [...config.include, '../drizzle.config.ts']
 			})
+		},
+		csp: {
+			// SvelteKit automatically adds the per-request nonce to script-src,
+			// which allows the %sveltekit.nonce% inline script in app.html to pass CSP.
+			directives: {
+				'default-src': ['self'],
+				'script-src': ['self'],
+				'style-src': ['self', 'unsafe-inline'],
+				'img-src': ['self', 'data:'],
+				'font-src': ['self', 'data:'],
+				'connect-src': ['self'],
+				'form-action': ['self'],
+				'frame-ancestors': ['none'],
+				'base-uri': ['self']
+			}
 		}
 	}
 };
