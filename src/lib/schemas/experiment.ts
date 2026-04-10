@@ -35,11 +35,15 @@ export const experimentFormSchema = z.object({
 		.max(80)
 		.regex(/^[a-z0-9][a-z0-9-]*$/, 'Use lowercase letters, digits, and hyphens'),
 	description: z.string().max(5000).default(''),
+	experimenterName: z.string().max(100).default('Experimenter'),
+	experimenterEmail: z.email().max(100).default('experimenter@example.com'),
 	durationMinutes: z.coerce.number().int().min(1).max(24 * 60),
 	inclusionCriteria: z.string().max(5000).default(''),
 	exclusionCriteria: z.string().max(5000).default(''),
 	minParticipants: z.coerce.number().int().min(1).max(1000),
 	maxParticipants: z.coerce.number().int().min(1).max(1000),
+	location: z.string().max(1000).default(''),
+	notes: z.string().max(5000).default(''),
 	excludePriorAttendees: asBool
 });
 export type ExperimentForm = z.infer<typeof experimentFormSchema>;

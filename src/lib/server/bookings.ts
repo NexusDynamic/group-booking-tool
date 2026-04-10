@@ -31,7 +31,7 @@ export class PriorAttendanceError extends Error {
  * Booking status changes that participants are not allowed to perform (e.g.
  * cancelling an already-cancelled booking).
  */
-export class BookingStateError extends Error {}
+export class BookingStateError extends Error { }
 
 /**
  * Upsert a participant row keyed by normalised email. Returns the row.
@@ -96,7 +96,7 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
 			.all();
 		const session = sessionRows[0];
 		if (!session) throw new Error(`Session ${input.sessionId} not found`);
-		if (session.status !== 'scheduled') {
+		if (session.status !== 'scheduled' && session.status !== 'confirmed') {
 			throw new BookingStateError(`Session is ${session.status}`);
 		}
 
@@ -120,6 +120,10 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
 			})
 			.returning()
 			.all();
+		if (session.status === 'scheduled' && (confirmed == session.capacity - 1 || confirmed + 1 >= session.minParticipants)) {
+			// Update session to 'confirmed' if this booking fills the last seat, or meets the minParticipants threshold.
+			tx.update(sessions).set({ status: 'confirmed', updatedAt: new Date() }).where(eq(sessions.id, session.id)).run();
+		}
 		return row;
 	});
 

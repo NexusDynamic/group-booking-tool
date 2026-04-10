@@ -47,6 +47,9 @@ export const experiments = sqliteTable(
 		excludePriorAttendees: integer('exclude_prior_attendees', { mode: 'boolean' })
 			.notNull()
 			.default(true),
+		experimenterName: text('experimenter_name').notNull().default('Experimenter'),
+		experimenterEmail: text('experimenter_email').notNull().default('experimenter@example.com'),
+		location: text('location').notNull().default(''),
 		isPublished: integer('is_published', { mode: 'boolean' }).notNull().default(false),
 		publicIcsToken: text('public_ics_token').notNull(),
 		researcherIcsToken: text('researcher_ics_token').notNull(),
@@ -78,11 +81,14 @@ export const recurrenceTemplates = sqliteTable(
 		durationMinutes: integer('duration_minutes').notNull(),
 		capacity: integer('capacity').notNull(),
 		minParticipants: integer('min_participants').notNull(),
+		location: text('location').notNull().default(''),
+		notes: text('notes').notNull().default(''),
 		windowStart: integer('window_start', { mode: 'timestamp_ms' }),
 		windowEnd: integer('window_end', { mode: 'timestamp_ms' }),
 		createdAt: createdAt()
 	},
-	(t) => [index('recurrence_templates_experiment_idx').on(t.experimentId)]
+	(t) => [
+		index('recurrence_templates_experiment_idx').on(t.experimentId)]
 );
 
 // -----------------------------------------------------------------------------
@@ -106,8 +112,9 @@ export const sessions = sqliteTable(
 		// 'scheduled' | 'cancelled' | 'completed'
 		status: text('status').notNull().default('scheduled'),
 		notes: text('notes').notNull().default(''),
+		publicIcsToken: text('public_ics_token').notNull(),
 		createdAt: createdAt(),
-		updatedAt: updatedAt()
+		updatedAt: updatedAt(),
 	},
 	(t) => [
 		index('sessions_experiment_starts_idx').on(t.experimentId, t.startsAt),
@@ -115,7 +122,8 @@ export const sessions = sqliteTable(
 		// partial unique: prevent duplicate materialisations of the same template instance
 		uniqueIndex('sessions_template_starts_idx')
 			.on(t.sourceTemplateId, t.startsAt)
-			.where(sql`source_template_id IS NOT NULL`)
+			.where(sql`source_template_id IS NOT NULL`),
+		uniqueIndex('sessions_public_ics_token_idx').on(t.publicIcsToken)
 	]
 );
 

@@ -1,5 +1,6 @@
 import { and, asc, eq, gte, inArray, isNull } from 'drizzle-orm';
 import { db } from './db';
+import { generateToken } from './tokens';
 import {
 	bookings,
 	recurrenceTemplates,
@@ -91,7 +92,8 @@ export async function createOneOffSession(
 			capacity: input.capacity,
 			minParticipants: input.minParticipants,
 			location: input.location ?? '',
-			notes: input.notes ?? ''
+			notes: input.notes ?? '',
+			publicIcsToken: generateToken()
 		})
 		.returning();
 	return row;
@@ -185,27 +187,26 @@ export async function materialiseTemplate(templateId: string): Promise<number> {
 
 	let inserted = 0;
 	for (const occ of occurrences) {
-		try {
-			const result = await db
-				.insert(sessions)
-				.values({
-					experimentId: template.experimentId,
-					sourceTemplateId: template.id,
-					startsAt: occ.startsAt,
-					endsAt: occ.endsAt,
-					capacity: template.capacity,
-					minParticipants: template.minParticipants
-				})
-				.onConflictDoNothing({
-					target: [sessions.sourceTemplateId, sessions.startsAt]
-				})
-				.returning();
-			if (result.length > 0) inserted++;
-		} catch (err) {
-			// On the partial unique index, onConflictDoNothing should handle it
-			// but some drivers still throw — swallow and continue.
-			if (!String(err).includes('UNIQUE')) throw err;
-		}
+		// .onConflictDoNothing() without a target generates INSERT OR IGNORE,
+		// which respects partial unique indexes. Specifying target columns would
+		// generate ON CONFLICT(col1, col2) DO NOTHING, which SQLite rejects for
+		// partial indexes ("does not match any PRIMARY KEY or UNIQUE constraint").
+		const result = await db
+			.insert(sessions)
+			.values({
+				experimentId: template.experimentId,
+				sourceTemplateId: template.id,
+				startsAt: occ.startsAt,
+				endsAt: occ.endsAt,
+				capacity: template.capacity,
+				minParticipants: template.minParticipants,
+				publicIcsToken: generateToken(),
+				location: template.location,
+				notes: template.notes
+			})
+			.onConflictDoNothing()
+			.returning();
+		if (result.length > 0) inserted++;
 	}
 	return inserted;
 }

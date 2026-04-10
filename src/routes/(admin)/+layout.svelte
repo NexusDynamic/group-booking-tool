@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { page } from '$app/state';
 	import type { LayoutData } from './$types';
+	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
@@ -17,8 +18,8 @@
 	}
 </script>
 
-<div class="min-h-screen bg-gray-50 text-gray-900">
-	<header class="border-b border-gray-200 bg-white">
+<div class="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+	<header class="border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
 		<div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
 			<a href="/dashboard" class="text-lg font-semibold">Group Booking</a>
 			<nav class="flex items-center gap-1">
@@ -26,8 +27,8 @@
 					<a
 						href={item.href}
 						class="rounded-md px-3 py-1.5 text-sm font-medium transition {isActive(item.href)
-							? 'bg-gray-900 text-white'
-							: 'text-gray-700 hover:bg-gray-100'}"
+							? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+							: 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'}"
 					>
 						{item.label}
 					</a>
@@ -35,14 +36,17 @@
 				<form method="post" action="/logout" class="ml-2">
 					<button
 						type="submit"
-						class="rounded-md px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+						class="rounded-md px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
 					>
 						Sign out
 					</button>
 				</form>
+				<div class="ml-1">
+					<ThemeToggle />
+				</div>
 			</nav>
 		</div>
-		<div class="mx-auto max-w-6xl px-6 pb-2 text-xs text-gray-500">
+		<div class="mx-auto max-w-6xl px-6 pb-2 text-xs text-gray-500 dark:text-gray-400">
 			Signed in as <span class="font-medium">{data.user.email}</span>
 		</div>
 	</header>

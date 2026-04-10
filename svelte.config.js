@@ -16,6 +16,21 @@ const config = {
 				...config,
 				include: [...config.include, '../drizzle.config.ts']
 			})
+		},
+		csp: {
+			// SvelteKit automatically adds the per-request nonce to script-src,
+			// which allows the %sveltekit.nonce% inline script in app.html to pass CSP.
+			directives: {
+				'default-src': ['self'],
+				'script-src': ['self'],
+				'style-src': ['self', 'unsafe-inline'],
+				'img-src': ['self', 'data:'],
+				'font-src': ['self', 'data:'],
+				'connect-src': ['self'],
+				'form-action': ['self'],
+				'frame-ancestors': ['none'],
+				'base-uri': ['self']
+			}
 		}
 	}
 };

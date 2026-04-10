@@ -66,35 +66,16 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
 };
 
 /**
- * Security headers applied to every response. The public `/e/**` routes get
- * a stricter CSP that forbids inline scripts — the public booking pages are
- * all server-rendered forms, so this does not break them. Admin routes fall
- * back to a looser CSP because SvelteKit's dev HMR / inspector need inline
- * script tags; the admin surface is behind auth anyway.
+ * Security headers applied to every response.
+ * CSP is configured in svelte.config.js so that SvelteKit can inject the
+ * per-request nonce into script-src automatically (needed for the inline
+ * FOUC-prevention script in app.html that uses %sveltekit.nonce%).
  */
 const handleSecurityHeaders: Handle = async ({ event, resolve }) => {
 	const response = await resolve(event);
 	response.headers.set('X-Content-Type-Options', 'nosniff');
 	response.headers.set('Referrer-Policy', 'same-origin');
 	response.headers.set('X-Frame-Options', 'DENY');
-
-	const isPublic = event.url.pathname.startsWith('/e/');
-	if (isPublic) {
-		response.headers.set(
-			'Content-Security-Policy',
-			[
-				"default-src 'self'",
-				"script-src 'self'",
-				"style-src 'self' 'unsafe-inline'",
-				"img-src 'self' data:",
-				"font-src 'self' data:",
-				"connect-src 'self'",
-				"form-action 'self'",
-				"frame-ancestors 'none'",
-				"base-uri 'self'"
-			].join('; ')
-		);
-	}
 	return response;
 };
 

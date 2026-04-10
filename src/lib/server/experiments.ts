@@ -45,7 +45,10 @@ export async function createExperiment(input: ExperimentForm): Promise<Experimen
 			maxParticipants: input.maxParticipants,
 			excludePriorAttendees: input.excludePriorAttendees,
 			publicIcsToken: generateToken(),
-			researcherIcsToken: generateToken()
+			researcherIcsToken: generateToken(),
+			experimenterName: input.experimenterName,
+			experimenterEmail: input.experimenterEmail,
+			location: input.location,
 		})
 		.returning();
 	return row;
@@ -73,6 +76,9 @@ export async function updateExperiment(
 			minParticipants: input.minParticipants,
 			maxParticipants: input.maxParticipants,
 			excludePriorAttendees: input.excludePriorAttendees,
+			experimenterName: input.experimenterName,
+			experimenterEmail: input.experimenterEmail,
+			location: input.location,
 			updatedAt: new Date()
 		})
 		.where(eq(experiments.id, id))

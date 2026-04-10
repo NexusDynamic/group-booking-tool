@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('$env/dynamic/private', () => ({ env: { CLINIC_TZ: 'Europe/Copenhagen' } }));
 
 const { expandTemplate, buildWeeklyRRule } = await import('./recurrence');
+const { localToUtc } = await import('./time');
 
 describe('expandTemplate', () => {
 	it('generates weekly Monday 09:00 occurrences across a 4-week window', () => {
@@ -67,6 +68,38 @@ describe('expandTemplate', () => {
 		});
 		expect(out).toHaveLength(1);
 		expect(out[0].startsAt.toISOString()).toBe('2026-06-01T07:00:00.000Z');
+	});
+
+	it('includes a session on the windowEnd date when windowEnd is end-of-day (T23:59:59)', () => {
+		// Regression: windowEnd was stored as T00:00 local (= prior evening in UTC),
+		// which excluded sessions on the end date itself. The page server now uses
+		// T23:59:59 so that sessions on the end date are included.
+		// Jun 29 09:00 CEST = 07:00 UTC; T23:59:59 CEST = 21:59:59 UTC → included.
+		const out = expandTemplate({
+			rrule: buildWeeklyRRule('MO'),
+			dtstartLocal: '2026-06-01T09:00',
+			durationMinutes: 60,
+			windowStart: new Date('2026-06-01T00:00:00Z'),
+			windowEnd: localToUtc('2026-06-29T23:59:59') // end-of-day
+		});
+		// Mondays: Jun 1, 8, 15, 22, 29 → 5 sessions
+		expect(out).toHaveLength(5);
+		expect(out[4].startsAt.toISOString()).toBe('2026-06-29T07:00:00.000Z');
+	});
+
+	it('excludes a session on the windowEnd date when windowEnd is midnight (old T00:00 bug)', () => {
+		// Documents the old incorrect behaviour so the regression is visible in tests.
+		// Jun 29 T00:00 CEST = Jun 28 22:00 UTC; session at 07:00 UTC Jun 29 > 22:00 → excluded.
+		const out = expandTemplate({
+			rrule: buildWeeklyRRule('MO'),
+			dtstartLocal: '2026-06-01T09:00',
+			durationMinutes: 60,
+			windowStart: new Date('2026-06-01T00:00:00Z'),
+			windowEnd: localToUtc('2026-06-29T00:00') // midnight = old bug
+		});
+		// Jun 29 session is excluded → only 4
+		expect(out).toHaveLength(4);
+		expect(out[3].startsAt.toISOString()).toBe('2026-06-22T07:00:00.000Z');
 	});
 
 	it('supports multiple weekdays via BYDAY', () => {

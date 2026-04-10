@@ -14,8 +14,8 @@ export const sessionFormSchema = z.object({
 	durationMinutes: z.coerce.number().int().min(1).max(24 * 60),
 	capacity: z.coerce.number().int().min(1).max(1000),
 	minParticipants: z.coerce.number().int().min(1).max(1000),
-	location: z.string().max(200).default(''),
-	notes: z.string().max(2000).default('')
+	location: z.string().max(1000).default(''),
+	notes: z.string().max(5000).default('')
 });
 export type SessionForm = z.infer<typeof sessionFormSchema>;
 
@@ -28,10 +28,13 @@ export const recurrenceTemplateFormSchema = z.object({
 		.trim()
 		.min(1)
 		.regex(/^(MO|TU|WE|TH|FR|SA|SU)(,(MO|TU|WE|TH|FR|SA|SU))*$/, 'Use MO,TU,... tokens'),
-	dtstartLocal: localDateTime,
+	// Wall-clock time only (HH:mm); the date part is derived from windowStart or today
+	timeLocal: z.string().trim().regex(/^\d{2}:\d{2}$/, 'Use HH:mm format'),
 	durationMinutes: z.coerce.number().int().min(1).max(24 * 60),
 	capacity: z.coerce.number().int().min(1).max(1000),
 	minParticipants: z.coerce.number().int().min(1).max(1000),
+	location: z.string().max(1000).default(''),
+	notes: z.string().max(5000).default(''),
 	// ISO local date-only: YYYY-MM-DD (we interpret at midnight in clinic tz)
 	windowStart: z
 		.string()

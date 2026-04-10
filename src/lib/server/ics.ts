@@ -40,6 +40,54 @@ interface SessionRow {
 	confirmedCount: number;
 }
 
+
+function buildCalendarEvent(eventAttrs: EventAttributes, id: string, host: string, adminEmail: string, adminDisplayName: string | undefined): EventAttributes {
+	return {
+		startInputType: 'utc',
+		endInputType: 'utc',
+		...eventAttrs,
+		organizer: {
+			name: adminDisplayName ?? 'Experiment Organizer',
+			email: adminEmail,
+		},
+		attendees: [
+			{
+				name: adminDisplayName ?? 'Experiment Organizer',
+				email: adminEmail,
+				rsvp: true,
+				role: 'CHAIR',
+				partstat: 'ACCEPTED'
+			},
+			...(eventAttrs.attendees ?? [])
+		]
+	};
+}
+
+
+function sessionStatusToIcsStatus(status: string): 'CONFIRMED' | 'CANCELLED' | 'TENTATIVE' {
+	switch (status) {
+		case 'scheduled':
+			return 'TENTATIVE';
+		case 'cancelled':
+			return 'CANCELLED';
+		default:
+			return 'CONFIRMED';
+	}
+}
+
+function sessionStatusForEventName(status: string): string {
+	switch (status) {
+		case 'scheduled':
+			return '[PENDING-CONFIRMATION] ';
+		case 'cancelled':
+			return '[CANCELLED] ';
+		case 'completed':
+			return '[COMPLETED] ';
+		default:
+			return '[CONFIRMED] ';
+	}
+}
+
 async function loadFeedData(experimentId: string, opts: IcsOpts) {
 	const lookaheadDays = opts.lookaheadDays ?? 365;
 	const cutoff = new Date(Date.now() + lookaheadDays * 24 * 60 * 60 * 1000);
@@ -112,17 +160,31 @@ function buildPublicEvent(
 	s: SessionRow,
 	host: string
 ): EventAttributes {
-	return {
+	return buildCalendarEvent({
 		uid: `${s.id}@${host}`,
-		title: `${exp.name} (${s.confirmedCount}/${s.capacity})`,
+		title: `${sessionStatusForEventName(s.status)}${exp.name} (${s.confirmedCount}/${s.capacity})`,
 		description: exp.description,
 		location: s.location || undefined,
 		start: toDateArray(s.startsAt),
 		end: toDateArray(s.endsAt),
-		startInputType: 'utc',
-		endInputType: 'utc',
-		status: 'CONFIRMED'
-	};
+		status: sessionStatusToIcsStatus(s.status)
+	}, s.id, host, exp.experimenterEmail, exp.experimenterName);
+}
+
+function buildParticipantSessionEvent(
+	exp: typeof experiments.$inferSelect,
+	s: SessionRow,
+	host: string
+): EventAttributes {
+	return buildCalendarEvent({
+		uid: `${s.id}@${host}`,
+		title: `${sessionStatusForEventName(s.status)}${exp.name}`,
+		description: exp.description,
+		location: s.location || undefined,
+		start: toDateArray(s.startsAt),
+		end: toDateArray(s.endsAt),
+		status: sessionStatusToIcsStatus(s.status)
+	}, s.id, host, exp.experimenterEmail, exp.experimenterName);
 }
 
 function reminderMatchesCondition(condition: string, s: SessionRow): boolean {
@@ -146,7 +208,7 @@ function buildReminderEvent(
 ): EventAttributes {
 	const reminderStart = new Date(s.startsAt.getTime() - rule.offsetMinutesBefore * 60 * 1000);
 	const reminderEnd = new Date(reminderStart.getTime() + rule.durationMinutes * 60 * 1000);
-	return {
+	return buildCalendarEvent({
 		uid: `${s.id}-reminder-${rule.id}@${host}`,
 		title: `${rule.label} — ${exp.name} (${s.confirmedCount}/${s.capacity})`,
 		description: `Reminder for session ${s.id}. Current booking count: ${s.confirmedCount}/${s.capacity}. Minimum: ${s.minParticipants}.`,
@@ -155,7 +217,7 @@ function buildReminderEvent(
 		startInputType: 'utc',
 		endInputType: 'utc',
 		status: 'CONFIRMED'
-	};
+	}, s.id, host, exp.experimenterEmail, exp.experimenterName);
 }
 
 function renderEvents(events: EventAttributes[]): string {
@@ -201,5 +263,35 @@ export async function buildResearcherFeed(
 			}
 		}
 	}
+	return renderEvents(events);
+}
+
+export async function buildSessionFeed(
+	sessionId: string,
+	opts: IcsOpts = {}
+): Promise<string> {
+	const host = opts.host ?? 'localhost';
+	const rows = await db
+		.select()
+		.from(sessions)
+		.where(eq(sessions.id, sessionId))
+		.limit(1);
+	if (rows.length === 0) throw new Error(`session ${sessionId} not found`);
+	const session = rows[0];
+
+	const expRows = await db
+		.select()
+		.from(experiments)
+		.where(eq(experiments.id, session.experimentId))
+		.limit(1);
+	if (expRows.length === 0) throw new Error(`experiment ${session.experimentId} not found`);
+	const experiment = expRows[0];
+
+	const events: EventAttributes[] = [];
+	if (session.status === 'scheduled' || session.status === 'confirmed') {
+
+		events.push(buildParticipantSessionEvent(experiment, { ...session, 'confirmedCount': 0 }, host));
+	}
+
 	return renderEvents(events);
 }
