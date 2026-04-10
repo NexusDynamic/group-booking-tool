@@ -38,6 +38,13 @@ interface SessionRow {
 	notes: string;
 	status: string;
 	confirmedCount: number;
+	participants?: ParticipantInSession[];
+}
+
+interface ParticipantInSession {
+	participantEmail: string;
+	participantName: string | undefined;
+	participantFormValues: Record<string, string>;
 }
 
 
@@ -88,7 +95,7 @@ function sessionStatusForEventName(status: string): string {
 	}
 }
 
-async function loadFeedData(experimentId: string, opts: IcsOpts) {
+async function loadFeedData(experimentId: string, opts: IcsOpts, includeParticipants = false): Promise<{ experiment: typeof experiments.$inferSelect; sessions: SessionRow[] }> {
 	const lookaheadDays = opts.lookaheadDays ?? 365;
 	const cutoff = new Date(Date.now() + lookaheadDays * 24 * 60 * 60 * 1000);
 	const now = new Date();
@@ -106,25 +113,53 @@ async function loadFeedData(experimentId: string, opts: IcsOpts) {
 		.where(and(eq(sessions.experimentId, experimentId), gte(sessions.startsAt, now)))
 		.orderBy(asc(sessions.startsAt));
 
-	const filtered = sessionRows.filter((r) => r.status === 'scheduled' && r.startsAt <= cutoff);
+	const filtered = sessionRows.filter((r) => (r.status === 'scheduled' || r.status === 'confirmed') && r.startsAt <= cutoff);
 
 	// Count confirmed bookings per session in one follow-up query, then map
 	// into the feed shape. Cleaner than a correlated sub-query via drizzle's
 	// sql template — and easier to test.
 	const countsBySession = new Map<string, number>();
+	const participantInfoBySession = new Map<string, ParticipantInSession[]>();
 	if (filtered.length > 0) {
-		const bookingRows = await db
-			.select({ sessionId: bookings.sessionId, status: bookings.status })
-			.from(bookings)
-			.where(
-				inArray(
-					bookings.sessionId,
-					filtered.map((s) => s.id)
-				)
-			);
-		for (const b of bookingRows) {
-			if (b.status === 'confirmed') {
-				countsBySession.set(b.sessionId, (countsBySession.get(b.sessionId) ?? 0) + 1);
+		if (includeParticipants) {
+			const bookingRows = await db
+				.select()
+				.from(bookings)
+				.where(
+					inArray(
+						bookings.sessionId,
+						filtered.map((s) => s.id)
+					)
+				);
+			for (const b of bookingRows) {
+				if (b.status === 'confirmed') {
+					countsBySession.set(b.sessionId, (countsBySession.get(b.sessionId) ?? 0) + 1);
+					if (b.snapshotEmail) {
+						const participantInfo = participantInfoBySession.get(b.sessionId) ?? [];
+						participantInfo.push({
+							participantEmail: b.snapshotEmail,
+							participantName: b.snapshotName,
+							participantFormValues: JSON.parse(b.snapshotFields)
+						});
+						participantInfoBySession.set(b.sessionId, participantInfo);
+					}
+				}
+			}
+
+		} else {
+			const bookingRows = await db
+				.select({ sessionId: bookings.sessionId, status: bookings.status })
+				.from(bookings)
+				.where(
+					inArray(
+						bookings.sessionId,
+						filtered.map((s) => s.id)
+					)
+				);
+			for (const b of bookingRows) {
+				if (b.status === 'confirmed') {
+					countsBySession.set(b.sessionId, (countsBySession.get(b.sessionId) ?? 0) + 1);
+				}
 			}
 		}
 	}
@@ -138,7 +173,8 @@ async function loadFeedData(experimentId: string, opts: IcsOpts) {
 		location: r.location,
 		notes: r.notes,
 		status: r.status,
-		confirmedCount: countsBySession.get(r.id) ?? 0
+		confirmedCount: countsBySession.get(r.id) ?? 0,
+		participants: participantInfoBySession.get(r.id) ?? []
 	}));
 
 	return { experiment: exp, sessions: scheduled };
@@ -164,6 +200,32 @@ function buildPublicEvent(
 		uid: `${s.id}@${host}`,
 		title: `${sessionStatusForEventName(s.status)}${exp.name} (${s.confirmedCount}/${s.capacity})`,
 		description: exp.description,
+		location: s.location || undefined,
+		start: toDateArray(s.startsAt),
+		end: toDateArray(s.endsAt),
+		status: sessionStatusToIcsStatus(s.status)
+	}, s.id, host, exp.experimenterEmail, exp.experimenterName);
+}
+
+function buildResearcherEvent(
+	exp: typeof experiments.$inferSelect,
+	s: SessionRow,
+	host: string
+): EventAttributes {
+	let description = exp.description;
+	if (s.participants && s.participants.length > 0) {
+		description += '\n\nParticipant form values:\n';
+		s.participants.forEach((p) => {
+			description += `- ${p.participantName ?? p.participantEmail} (${p.participantEmail}):\n`;
+			for (const [k, v] of Object.entries(p.participantFormValues)) {
+				description += `---- ${k}: ${v}\n`;
+			}
+		});
+	}
+	return buildCalendarEvent({
+		uid: `${s.id}@${host}`,
+		title: `${sessionStatusForEventName(s.status)}${exp.name} (${s.confirmedCount}/${s.capacity})`,
+		description: description,
 		location: s.location || undefined,
 		start: toDateArray(s.startsAt),
 		end: toDateArray(s.endsAt),
@@ -247,7 +309,7 @@ export async function buildResearcherFeed(
 	opts: IcsOpts = {}
 ): Promise<string> {
 	const host = opts.host ?? 'localhost';
-	const { experiment, sessions: rows } = await loadFeedData(experimentId, opts);
+	const { experiment, sessions: rows } = await loadFeedData(experimentId, opts, true);
 
 	const rules = await db
 		.select()
@@ -256,7 +318,7 @@ export async function buildResearcherFeed(
 
 	const events: EventAttributes[] = [];
 	for (const s of rows) {
-		events.push(buildPublicEvent(experiment, s, host));
+		events.push(buildResearcherEvent(experiment, s, host));
 		for (const rule of rules) {
 			if (reminderMatchesCondition(rule.condition, s)) {
 				events.push(buildReminderEvent(experiment, s, rule, host));
