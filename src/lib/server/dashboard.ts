@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, or } from 'drizzle-orm';
 import { db } from './db';
 import { bookingPreferences, bookings, experiments, sessions } from './db/schema';
 
@@ -48,7 +48,12 @@ export async function loadDashboard(opts: { upcomingLimit?: number } = {}): Prom
 	const sessionRows = await db
 		.select()
 		.from(sessions)
-		.where(and(gte(sessions.startsAt, now), eq(sessions.status, 'scheduled')))
+		.where(
+			and(
+				gte(sessions.startsAt, now),
+				or(eq(sessions.status, 'scheduled'), eq(sessions.status, 'confirmed'))
+			)
+		)
 		.orderBy(asc(sessions.startsAt));
 
 	const countsBySession = new Map<string, number>();
