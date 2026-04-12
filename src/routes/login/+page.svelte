@@ -59,4 +59,25 @@
 			>.
 		</p>
 	</div>
+	<footer
+		class="fixed bottom-0 left-0 mt-12 mb-4 w-full text-center text-sm text-gray-500 dark:text-gray-400"
+	>
+		<p>
+			&copy; {new Date().getFullYear()}
+			<a href="https://zeyus.com/" target="_blank" rel="noopener noreferrer">zeyus</a>. Licenced
+			under the
+			<a
+				class="underline"
+				href="https://github.com/NexusDynamic/group-booking-tool/blob/main/LICENSE"
+				target="_blank"
+				rel="noopener noreferrer">MIT License</a
+			>.
+			<a
+				class="underline"
+				href="https://github.com/NexusDynamic/group-booking-tool"
+				target="_blank"
+				rel="noopener noreferrer">Source code</a
+			>.
+		</p>
+	</footer>
 </div>
