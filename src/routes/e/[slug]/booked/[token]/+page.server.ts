@@ -5,7 +5,7 @@ import { cancelBookingByToken, findBookingByToken } from '$lib/server/bookings';
 import { formatInTz } from '$lib/server/time';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, url }) => {
 	const experiment = await getExperimentBySlug(params.slug);
 	if (!experiment) throw error(404, 'Experiment not found');
 
@@ -16,6 +16,10 @@ export const load: PageServerLoad = async ({ params }) => {
 	if (!session || session.experimentId !== experiment.id) {
 		throw error(404, 'This booking link is not valid');
 	}
+
+	const origin = url.origin;
+	const icsUrl = `${origin}/ics/session/${session.publicIcsToken}.ics`;
+	const webcalURL = `webcal://${url.host}/ics/session/${session.publicIcsToken}.ics`;
 
 	return {
 		experiment: {
@@ -32,7 +36,10 @@ export const load: PageServerLoad = async ({ params }) => {
 			startsAtLabel: formatInTz(session.startsAt),
 			endsAtLabel: formatInTz(session.endsAt, undefined, { timeStyle: 'short' }),
 			location: session.location,
-			status: session.status
+			status: session.status,
+			sessionCalendarUrl: icsUrl,
+			sessionWebcalUrl: webcalURL,
+			notes: session.notes
 		}
 	};
 };

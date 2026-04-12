@@ -17,7 +17,10 @@
 			label: 'Sessions',
 			matchChildren: true
 		},
-		{ href: resolve('/(admin)/experiments/[id]/preferences', { id }), label: 'Preferences' },
+		{
+			href: resolve('/(admin)/experiments/[id]/preferences', { id }),
+			label: 'Assign Participants'
+		},
 		{ href: resolve('/(admin)/experiments/[id]/reminders', { id }), label: 'Reminders' },
 		{ href: resolve('/(admin)/experiments/[id]/ics', { id }), label: 'ICS' }
 	]);

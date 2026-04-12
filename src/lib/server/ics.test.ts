@@ -36,6 +36,7 @@ function ddl() {
 			experimenter_name TEXT NOT NULL DEFAULT 'Experimenter',
 			experimenter_email TEXT NOT NULL DEFAULT 'experimenter@example.com',
 			location TEXT NOT NULL DEFAULT '',
+			notes TEXT NOT NULL DEFAULT '',
 			is_published INTEGER NOT NULL DEFAULT 0,
 			public_ics_token TEXT NOT NULL,
 			researcher_ics_token TEXT NOT NULL,

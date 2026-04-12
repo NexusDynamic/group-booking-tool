@@ -108,7 +108,7 @@
 				/>
 			</label>
 			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Capacity</span>
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Max participants</span>
 				<input
 					type="number"
 					name="capacity"
@@ -129,22 +129,25 @@
 					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
 				/>
 			</label>
-			<label class="block sm:col-span-2">
+			<label class="block">
 				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Location</span>
-				<input
+				<textarea
 					name="location"
-					value={form?.values?.location ?? ''}
+					rows="2"
 					placeholder="Room B-305"
 					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-				/>
+					>{form?.values?.location ?? exp.location}</textarea
+				>
 			</label>
-			<label class="block sm:col-span-2">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Notes</span>
+			<label class="block">
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+					>Notes for participants</span
+				>
 				<textarea
 					name="notes"
 					rows="2"
 					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-					>{form?.values?.notes ?? ''}</textarea
+					>{form?.values?.notes ?? exp.notes}</textarea
 				>
 			</label>
 			<div class="sm:col-span-2">

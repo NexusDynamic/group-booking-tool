@@ -172,7 +172,7 @@
 			/>
 		</label>
 		<label class="block">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Capacity</span>
+			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Max participants</span>
 			<input
 				type="number"
 				name="capacity"
@@ -195,14 +195,17 @@
 		</label>
 		<label class="block sm:col-span-2">
 			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Location</span>
-			<input
+			<textarea
 				name="location"
-				value={session.location}
+				rows="3"
 				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-			/>
+				>{session.location}</textarea
+			>
 		</label>
 		<label class="block sm:col-span-2">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Notes</span>
+			<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+				>Notes for participants</span
+			>
 			<textarea
 				name="notes"
 				rows="3"

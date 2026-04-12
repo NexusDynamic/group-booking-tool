@@ -247,13 +247,13 @@
 	</label>
 	<label class="block sm:col-span-2">
 		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-			>Default Session Notes (optional)</span
+			>Default Session Notes for participants (optional)</span
 		>
 		<textarea
 			name="notes"
 			rows="3"
 			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-			>{form?.values?.notes ?? ''}</textarea
+			>{form?.values?.notes ?? exp.notes}</textarea
 		>
 	</label>
 

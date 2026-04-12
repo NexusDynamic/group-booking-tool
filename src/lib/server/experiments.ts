@@ -48,7 +48,8 @@ export async function createExperiment(input: ExperimentForm): Promise<Experimen
 			researcherIcsToken: generateToken(),
 			experimenterName: input.experimenterName,
 			experimenterEmail: input.experimenterEmail,
-			location: input.location
+			location: input.location,
+			notes: input.notes
 		})
 		.returning();
 	return row;
@@ -79,6 +80,7 @@ export async function updateExperiment(
 			experimenterName: input.experimenterName,
 			experimenterEmail: input.experimenterEmail,
 			location: input.location,
+			notes: input.notes,
 			updatedAt: new Date()
 		})
 		.where(eq(experiments.id, id))

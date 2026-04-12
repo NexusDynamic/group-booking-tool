@@ -50,6 +50,7 @@ export const experiments = sqliteTable(
 		experimenterName: text('experimenter_name').notNull().default('Experimenter'),
 		experimenterEmail: text('experimenter_email').notNull().default('experimenter@example.com'),
 		location: text('location').notNull().default(''),
+		notes: text('notes').notNull().default(''),
 		isPublished: integer('is_published', { mode: 'boolean' }).notNull().default(false),
 		publicIcsToken: text('public_ics_token').notNull(),
 		researcherIcsToken: text('researcher_ics_token').notNull(),
