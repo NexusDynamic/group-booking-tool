@@ -1,10 +1,6 @@
 import { error, fail } from '@sveltejs/kit';
 import { getExperimentById } from '$lib/server/experiments';
-import {
-	createReminderRule,
-	deleteReminderRule,
-	listReminderRules
-} from '$lib/server/reminders';
+import { createReminderRule, deleteReminderRule, listReminderRules } from '$lib/server/reminders';
 import { reminderRuleFormSchema } from '$lib/schemas/reminder';
 import { parseForm } from '$lib/server/validate';
 import type { Actions, PageServerLoad } from './$types';

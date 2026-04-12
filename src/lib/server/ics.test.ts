@@ -95,9 +95,7 @@ beforeEach(() => {
 	);
 });
 
-function seedExperiment(
-	opts: { description?: string } = {}
-) {
+function seedExperiment(opts: { description?: string } = {}) {
 	client
 		.prepare(
 			'INSERT INTO experiments (id, slug, name, description, duration_minutes, min_participants, max_participants, public_ics_token, researcher_ics_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'

@@ -22,7 +22,7 @@
 			<h2 class="text-sm font-semibold text-gray-700 uppercase dark:text-gray-300">
 				Inclusion criteria
 			</h2>
-			<p class="mt-1 whitespace-pre-line text-sm text-gray-700 dark:text-gray-300">
+			<p class="mt-1 text-sm whitespace-pre-line text-gray-700 dark:text-gray-300">
 				{exp.inclusionCriteria}
 			</p>
 		</section>
@@ -32,7 +32,7 @@
 			<h2 class="text-sm font-semibold text-gray-700 uppercase dark:text-gray-300">
 				Exclusion criteria
 			</h2>
-			<p class="mt-1 whitespace-pre-line text-sm text-gray-700 dark:text-gray-300">
+			<p class="mt-1 text-sm whitespace-pre-line text-gray-700 dark:text-gray-300">
 				{exp.exclusionCriteria}
 			</p>
 		</section>

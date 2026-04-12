@@ -200,9 +200,9 @@ describe('preferences repo', () => {
 		const refreshed = await getPreferenceById(preference.id);
 		expect(refreshed?.status).toBe('assigned');
 
-		const bookingCount = client
-			.prepare('SELECT COUNT(*) as n FROM bookings')
-			.get() as { n: number };
+		const bookingCount = client.prepare('SELECT COUNT(*) as n FROM bookings').get() as {
+			n: number;
+		};
 		expect(bookingCount.n).toBe(2);
 	});
 });

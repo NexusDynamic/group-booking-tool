@@ -21,7 +21,9 @@
 	</p>
 
 	{#if form?.error}
-		<p class="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-300">
+		<p
+			class="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-300"
+		>
 			{form.error}
 		</p>
 	{/if}
@@ -40,7 +42,9 @@
 					{#each data.sessions as s (s.id)}
 						<label
 							class={`flex items-center gap-3 rounded-md border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900 ${
-								s.isFull ? 'cursor-not-allowed opacity-60' : 'hover:border-gray-400 dark:hover:border-gray-500'
+								s.isFull
+									? 'cursor-not-allowed opacity-60'
+									: 'hover:border-gray-400 dark:hover:border-gray-500'
 							}`}
 						>
 							<input

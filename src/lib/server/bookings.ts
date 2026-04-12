@@ -31,7 +31,7 @@ export class PriorAttendanceError extends Error {
  * Booking status changes that participants are not allowed to perform (e.g.
  * cancelling an already-cancelled booking).
  */
-export class BookingStateError extends Error { }
+export class BookingStateError extends Error {}
 
 /**
  * Upsert a participant row keyed by normalised email. Returns the row.
@@ -89,11 +89,7 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
 	// accepts a sync callback for this driver. We wrap in a Promise-returning
 	// async function for API consistency.
 	const booking = db.transaction((tx) => {
-		const sessionRows = tx
-			.select()
-			.from(sessions)
-			.where(eq(sessions.id, input.sessionId))
-			.all();
+		const sessionRows = tx.select().from(sessions).where(eq(sessions.id, input.sessionId)).all();
 		const session = sessionRows[0];
 		if (!session) throw new Error(`Session ${input.sessionId} not found`);
 		if (session.status !== 'scheduled' && session.status !== 'confirmed') {
@@ -120,9 +116,15 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
 			})
 			.returning()
 			.all();
-		if (session.status === 'scheduled' && (confirmed == session.capacity - 1 || confirmed + 1 >= session.minParticipants)) {
+		if (
+			session.status === 'scheduled' &&
+			(confirmed == session.capacity - 1 || confirmed + 1 >= session.minParticipants)
+		) {
 			// Update session to 'confirmed' if this booking fills the last seat, or meets the minParticipants threshold.
-			tx.update(sessions).set({ status: 'confirmed', updatedAt: new Date() }).where(eq(sessions.id, session.id)).run();
+			tx.update(sessions)
+				.set({ status: 'confirmed', updatedAt: new Date() })
+				.where(eq(sessions.id, session.id))
+				.run();
 		}
 		return row;
 	});
@@ -176,8 +178,5 @@ export async function setBookingStatus(
 	id: string,
 	status: 'confirmed' | 'cancelled' | 'attended' | 'no_show'
 ): Promise<void> {
-	await db
-		.update(bookings)
-		.set({ status, updatedAt: new Date() })
-		.where(eq(bookings.id, id));
+	await db.update(bookings).set({ status, updatedAt: new Date() }).where(eq(bookings.id, id));
 }

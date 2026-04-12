@@ -37,7 +37,11 @@ export const experimentFormSchema = z.object({
 	description: z.string().max(5000).default(''),
 	experimenterName: z.string().max(100).default('Experimenter'),
 	experimenterEmail: z.email().max(100).default('experimenter@example.com'),
-	durationMinutes: z.coerce.number().int().min(1).max(24 * 60),
+	durationMinutes: z.coerce
+		.number()
+		.int()
+		.min(1)
+		.max(24 * 60),
 	inclusionCriteria: z.string().max(5000).default(''),
 	exclusionCriteria: z.string().max(5000).default(''),
 	minParticipants: z.coerce.number().int().min(1).max(1000),

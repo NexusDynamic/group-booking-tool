@@ -81,84 +81,79 @@
 
 {#if showNewForm}
 	<Card class="mt-6 p-4">
-	<form
-		method="post"
-		action="?/create"
-		use:enhance
-		class="grid gap-4 sm:grid-cols-2"
-	>
-		<label class="block">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Start (local)</span>
-			<input
-				type="datetime-local"
-				name="startsAtLocal"
-				required
-				value={form?.values?.startsAtLocal ?? ''}
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-			/>
-			{#if form?.errors?.startsAtLocal}
-				<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.startsAtLocal}</p>
-			{/if}
-		</label>
-		<label class="block">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Duration (minutes)</span>
-			<input
-				type="number"
-				name="durationMinutes"
-				min="1"
-				required
-				value={form?.values?.durationMinutes ?? exp.durationMinutes}
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-			/>
-		</label>
-		<label class="block">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Capacity</span>
-			<input
-				type="number"
-				name="capacity"
-				min="1"
-				required
-				value={form?.values?.capacity ?? exp.maxParticipants}
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-			/>
-		</label>
-		<label class="block">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Min participants</span>
-			<input
-				type="number"
-				name="minParticipants"
-				min="1"
-				required
-				value={form?.values?.minParticipants ?? exp.minParticipants}
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-			/>
-		</label>
-		<label class="sm:col-span-2 block">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Location</span>
-			<input
-				name="location"
-				value={form?.values?.location ?? ''}
-				placeholder="Room B-305"
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-			/>
-		</label>
-		<label class="sm:col-span-2 block">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Notes</span>
-			<textarea
-				name="notes"
-				rows="2"
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-				>{form?.values?.notes ?? ''}</textarea
-			>
-		</label>
-		<div class="sm:col-span-2">
-			<button
-				type="submit"
-				class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
-				>Create session</button
-			>
-		</div>
-	</form>
+		<form method="post" action="?/create" use:enhance class="grid gap-4 sm:grid-cols-2">
+			<label class="block">
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Start (local)</span>
+				<input
+					type="datetime-local"
+					name="startsAtLocal"
+					required
+					value={form?.values?.startsAtLocal ?? ''}
+					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				/>
+				{#if form?.errors?.startsAtLocal}
+					<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.startsAtLocal}</p>
+				{/if}
+			</label>
+			<label class="block">
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Duration (minutes)</span>
+				<input
+					type="number"
+					name="durationMinutes"
+					min="1"
+					required
+					value={form?.values?.durationMinutes ?? exp.durationMinutes}
+					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				/>
+			</label>
+			<label class="block">
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Capacity</span>
+				<input
+					type="number"
+					name="capacity"
+					min="1"
+					required
+					value={form?.values?.capacity ?? exp.maxParticipants}
+					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				/>
+			</label>
+			<label class="block">
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Min participants</span>
+				<input
+					type="number"
+					name="minParticipants"
+					min="1"
+					required
+					value={form?.values?.minParticipants ?? exp.minParticipants}
+					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				/>
+			</label>
+			<label class="block sm:col-span-2">
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Location</span>
+				<input
+					name="location"
+					value={form?.values?.location ?? ''}
+					placeholder="Room B-305"
+					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				/>
+			</label>
+			<label class="block sm:col-span-2">
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Notes</span>
+				<textarea
+					name="notes"
+					rows="2"
+					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+					>{form?.values?.notes ?? ''}</textarea
+				>
+			</label>
+			<div class="sm:col-span-2">
+				<button
+					type="submit"
+					class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+					>Create session</button
+				>
+			</div>
+		</form>
 	</Card>
 {/if}
 
@@ -182,13 +177,15 @@
 					<td class="px-4 py-3">
 						<a
 							href={`/experiments/${exp.id}/sessions/${s.id}`}
-							class="font-medium text-gray-900 hover:underline dark:text-gray-100">{s.startsAtLabel}</a
+							class="font-medium text-gray-900 hover:underline dark:text-gray-100"
+							>{s.startsAtLabel}</a
 						>
 						<div class="text-xs text-gray-500 dark:text-gray-400">until {s.endsAtLabel}</div>
 					</td>
 					<td class="px-4 py-3 font-mono">{s.confirmedCount}/{s.capacity}</td>
 					<td class="px-4 py-3">
-						<span class={`inline-block rounded px-2 py-0.5 text-xs font-medium ${badgeClass(label)}`}
+						<span
+							class={`inline-block rounded px-2 py-0.5 text-xs font-medium ${badgeClass(label)}`}
 							>{label}</span
 						>
 					</td>

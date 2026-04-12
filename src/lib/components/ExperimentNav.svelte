@@ -27,9 +27,7 @@
 <nav class="mt-6 flex gap-4 border-b border-gray-200 text-sm dark:border-gray-700">
 	{#each tabs as tab}
 		{#if isActive(tab)}
-			<span class="border-b-2 border-gray-900 pb-2 font-medium dark:border-white"
-				>{tab.label}</span
-			>
+			<span class="border-b-2 border-gray-900 pb-2 font-medium dark:border-white">{tab.label}</span>
 		{:else}
 			<a
 				href={tab.href}

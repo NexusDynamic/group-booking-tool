@@ -28,7 +28,7 @@
 	>
 		<h2 class="text-lg font-medium">New experiment</h2>
 		<form method="post" action="?/create" use:enhance class="mt-4 grid gap-4 sm:grid-cols-2">
-			<label class="sm:col-span-2 block">
+			<label class="block sm:col-span-2">
 				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Name</span>
 				<input
 					name="name"
@@ -40,8 +40,10 @@
 					<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.name}</p>
 				{/if}
 			</label>
-			<label class="sm:col-span-2 block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Display name for experimenter</span>
+			<label class="block sm:col-span-2">
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+					>Display name for experimenter</span
+				>
 				<input
 					name="experimenterName"
 					required
@@ -52,8 +54,10 @@
 					<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.experimenterName}</p>
 				{/if}
 			</label>
-			<label class="sm:col-span-2 block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Contact email for experimenter</span>
+			<label class="block sm:col-span-2">
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+					>Contact email for experimenter</span
+				>
 				<input
 					type="email"
 					name="experimenterEmail"
@@ -78,9 +82,7 @@
 				{/if}
 			</label>
 			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-					>Duration (minutes)</span
-				>
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Duration (minutes)</span>
 				<input
 					type="number"
 					name="durationMinutes"
@@ -126,7 +128,7 @@
 					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
 				/>
 			</label>
-			<label class="sm:col-span-2 block">
+			<label class="block sm:col-span-2">
 				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Description</span>
 				<textarea
 					name="description"
@@ -136,9 +138,7 @@
 				>
 			</label>
 			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-					>Inclusion criteria</span
-				>
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Inclusion criteria</span>
 				<textarea
 					name="inclusionCriteria"
 					rows="3"
@@ -147,9 +147,7 @@
 				>
 			</label>
 			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-					>Exclusion criteria</span
-				>
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Exclusion criteria</span>
 				<textarea
 					name="exclusionCriteria"
 					rows="3"
@@ -157,7 +155,7 @@
 					>{form?.values?.exclusionCriteria ?? ''}</textarea
 				>
 			</label>
-			<label class="sm:col-span-2 flex items-center gap-2">
+			<label class="flex items-center gap-2 sm:col-span-2">
 				<input
 					type="checkbox"
 					name="excludePriorAttendees"

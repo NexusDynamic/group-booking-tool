@@ -48,9 +48,7 @@
 						<td class="px-4 py-2 text-green-700 dark:text-green-400">{p.attendedCount}</td>
 						<td class="px-4 py-2 text-amber-700 dark:text-amber-400">{p.noShowCount}</td>
 						<td class="px-4 py-2 text-gray-500 dark:text-gray-400">{p.cancelledCount}</td>
-						<td class="px-4 py-2 text-gray-500 dark:text-gray-400"
-							>{p.lastBookingLabel ?? '—'}</td
-						>
+						<td class="px-4 py-2 text-gray-500 dark:text-gray-400">{p.lastBookingLabel ?? '—'}</td>
 					</tr>
 				{/each}
 			</tbody>

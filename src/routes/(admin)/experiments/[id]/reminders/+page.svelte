@@ -40,8 +40,8 @@
 >
 <h1 class="mt-1 text-2xl font-semibold">Reminder rules</h1>
 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-	These rules generate extra events in the researcher ICS feed. Use them to remind yourself to
-	email participants, consider cancelling, or whatever the condition demands.
+	These rules generate extra events in the researcher ICS feed. Use them to remind yourself to email
+	participants, consider cancelling, or whatever the condition demands.
 </p>
 
 <ExperimentNav />
@@ -78,7 +78,7 @@
 
 <h2 class="mt-10 text-lg font-semibold">New rule</h2>
 <form method="post" action="?/create" use:enhance class="mt-4 grid gap-4 sm:grid-cols-2">
-	<label class="sm:col-span-2 block">
+	<label class="block sm:col-span-2">
 		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Label</span>
 		<input
 			name="label"
@@ -92,9 +92,7 @@
 		{/if}
 	</label>
 	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-			>Minutes before session</span
-		>
+		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Minutes before session</span>
 		<input
 			type="number"
 			name="offsetMinutesBefore"

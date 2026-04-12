@@ -87,8 +87,7 @@ export const recurrenceTemplates = sqliteTable(
 		windowEnd: integer('window_end', { mode: 'timestamp_ms' }),
 		createdAt: createdAt()
 	},
-	(t) => [
-		index('recurrence_templates_experiment_idx').on(t.experimentId)]
+	(t) => [index('recurrence_templates_experiment_idx').on(t.experimentId)]
 );
 
 // -----------------------------------------------------------------------------
@@ -114,7 +113,7 @@ export const sessions = sqliteTable(
 		notes: text('notes').notNull().default(''),
 		publicIcsToken: text('public_ics_token').notNull(),
 		createdAt: createdAt(),
-		updatedAt: updatedAt(),
+		updatedAt: updatedAt()
 	},
 	(t) => [
 		index('sessions_experiment_starts_idx').on(t.experimentId, t.startsAt),

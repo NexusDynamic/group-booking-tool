@@ -48,7 +48,7 @@ export async function createExperiment(input: ExperimentForm): Promise<Experimen
 			researcherIcsToken: generateToken(),
 			experimenterName: input.experimenterName,
 			experimenterEmail: input.experimenterEmail,
-			location: input.location,
+			location: input.location
 		})
 		.returning();
 	return row;
@@ -93,10 +93,7 @@ export async function setPublished(id: string, isPublished: boolean): Promise<vo
 		.where(eq(experiments.id, id));
 }
 
-export async function updateRequiredFields(
-	id: string,
-	fields: RequiredField[]
-): Promise<void> {
+export async function updateRequiredFields(id: string, fields: RequiredField[]): Promise<void> {
 	const validated = requiredFieldsSchema.parse(fields);
 	await db
 		.update(experiments)
@@ -126,10 +123,7 @@ export async function deleteExperiment(id: string): Promise<void> {
 	await db.delete(experiments).where(eq(experiments.id, id));
 }
 
-export async function rotateIcsToken(
-	id: string,
-	which: 'public' | 'researcher'
-): Promise<void> {
+export async function rotateIcsToken(id: string, which: 'public' | 'researcher'): Promise<void> {
 	const column = which === 'public' ? 'publicIcsToken' : 'researcherIcsToken';
 	await db
 		.update(experiments)

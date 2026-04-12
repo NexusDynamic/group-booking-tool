@@ -23,9 +23,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		windowStartLabel: t.windowStart
 			? formatInTz(t.windowStart, undefined, { dateStyle: 'medium' })
 			: null,
-		windowEndLabel: t.windowEnd
-			? formatInTz(t.windowEnd, undefined, { dateStyle: 'medium' })
-			: null
+		windowEndLabel: t.windowEnd ? formatInTz(t.windowEnd, undefined, { dateStyle: 'medium' }) : null
 	}));
 	return { experiment, templates };
 };
@@ -59,8 +57,16 @@ export const actions: Actions = {
 		const parsed = parseForm(recurrenceTemplateFormSchema, formData);
 		if (!parsed.ok) return parsed.failure;
 
-		const { label, byDay, timeLocal, durationMinutes, capacity, minParticipants, windowStart, windowEnd } =
-			parsed.data;
+		const {
+			label,
+			byDay,
+			timeLocal,
+			durationMinutes,
+			capacity,
+			minParticipants,
+			windowStart,
+			windowEnd
+		} = parsed.data;
 
 		// Derive dtstartLocal: the RRULE wall-clock anchor. Only the HH:mm part
 		// matters for weekly recurrences (BYDAY overrides the day-of-week); we

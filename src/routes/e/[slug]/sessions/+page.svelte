@@ -26,7 +26,9 @@
 	<h1 class="mt-1 text-2xl font-semibold">Pick a session</h1>
 
 	{#if form?.error}
-		<p class="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-300">
+		<p
+			class="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-300"
+		>
 			{form.error}
 		</p>
 	{/if}
@@ -64,7 +66,8 @@
 								<div class="font-medium">{s.startsAtLabel}</div>
 								<div class="text-xs text-gray-500 dark:text-gray-400">
 									until {s.endsAtLabel}
-									{#if s.location} · {s.location}{/if}
+									{#if s.location}
+										· {s.location}{/if}
 								</div>
 							</div>
 							<div class="font-mono text-xs text-gray-500 dark:text-gray-400">
@@ -106,9 +109,8 @@
 				{#each data.requiredFields as f (f.key)}
 					<label class="block">
 						<span class="text-sm text-gray-700 dark:text-gray-300"
-							>{f.label}{#if f.required}<span class="ml-0.5 text-red-600 dark:text-red-400"
-								>*</span
-							>{/if}</span
+							>{f.label}{#if f.required}<span class="ml-0.5 text-red-600 dark:text-red-400">*</span
+								>{/if}</span
 						>
 						{#if f.type === 'checkbox'}
 							<input

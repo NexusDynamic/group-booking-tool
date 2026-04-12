@@ -1,11 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { getExperimentById } from '$lib/server/experiments';
-import {
-	cancelSession,
-	deleteSession,
-	getSessionById,
-	updateSession
-} from '$lib/server/sessions';
+import { cancelSession, deleteSession, getSessionById, updateSession } from '$lib/server/sessions';
 import { listBookingsForSession, setBookingStatus } from '$lib/server/bookings';
 import { formatInTz, localToUtc } from '$lib/server/time';
 import type { Actions, PageServerLoad } from './$types';

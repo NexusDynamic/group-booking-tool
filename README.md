@@ -3,13 +3,12 @@
 A small, self-hosted web app for researchers who run group experiments and need
 a way to publish session slots and register participant signups. One SQLite file, ICS feeds for participants and researchers (including custom reminder events)
 
-
 ## Features
 
 - Define experiments with required participant-info fields and inclusion/exclusion criteria.
 - Create session slots either one-off or as recurrence templates (weekly, etc.) that you "generate" into concrete sessions.
 - Participants book a session without an account; they get a self-manage URL containing an opaque token (cancel / update from that link).
-- Participants can also submit a preference for multiple sessions, and the researcher can assign them to a session 
+- Participants can also submit a preference for multiple sessions, and the researcher can assign them to a session
 - Dashboard, session grid, and per-session detail pages highlight below-minimum, full, and at-capacity state.
 - Three ICS feeds per experiment: a **experiment** feed whose event titles show live `(n/cap)` counts, and a **researcher** feed that also includes reminder events defined per rule (e.g. "email participants 1 day before" or "consider cancelling — still below minimum"), and a participant feed that shows the status of the session (e.g. confirmed, cancelled, etc.).
 - Mark attendance (attended / no-show); a future booking from the same email on the same experiment can be automatically blocked if you don't want to allow participants to attend multiple times.

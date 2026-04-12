@@ -43,7 +43,9 @@
 	<Alert variant="success">Template created.</Alert>
 {/if}
 {#if form?.generated}
-	<Alert variant="success">Generated {form.inserted} new session{form.inserted === 1 ? '' : 's'}.</Alert>
+	<Alert variant="success"
+		>Generated {form.inserted} new session{form.inserted === 1 ? '' : 's'}.</Alert
+	>
 {/if}
 {#if form?.regenerated}
 	<Alert variant="success">Regenerated: {form.deleted} removed, {form.inserted} inserted.</Alert>
@@ -62,7 +64,10 @@
 						{prettyRrule(t.rrule)} at {t.dtstartLocal.slice(11, 16)}, {t.durationMinutes} min
 					</p>
 					<p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-						Capacity {t.capacity} (min {t.minParticipants}) · window {formatWindow(t.windowStartLabel, t.windowEndLabel)}
+						Capacity {t.capacity} (min {t.minParticipants}) · window {formatWindow(
+							t.windowStartLabel,
+							t.windowEndLabel
+						)}
 					</p>
 				</div>
 				<div class="flex flex-shrink-0 flex-wrap justify-end gap-2">
@@ -117,7 +122,7 @@
 
 <h2 class="mt-10 text-lg font-semibold">New template</h2>
 <form method="post" action="?/create" use:enhance class="mt-4 grid gap-4 sm:grid-cols-2">
-	<label class="sm:col-span-2 block">
+	<label class="block sm:col-span-2">
 		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Label</span>
 		<input
 			name="label"
@@ -228,8 +233,10 @@
 			Leave blank to generate 1 year of sessions
 		</p>
 	</label>
-	<label class="sm:col-span-2 block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Default Session Location (optional)</span>
+	<label class="block sm:col-span-2">
+		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+			>Default Session Location (optional)</span
+		>
 		<textarea
 			name="location"
 			rows="3"
@@ -237,8 +244,10 @@
 			>{form?.values?.location ?? exp.location}</textarea
 		>
 	</label>
-	<label class="sm:col-span-2 block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Default Session Notes (optional)</span>
+	<label class="block sm:col-span-2">
+		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+			>Default Session Notes (optional)</span
+		>
 		<textarea
 			name="notes"
 			rows="3"
@@ -246,7 +255,6 @@
 			>{form?.values?.notes ?? ''}</textarea
 		>
 	</label>
-	
 
 	<div class="sm:col-span-2">
 		<button

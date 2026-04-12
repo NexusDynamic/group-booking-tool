@@ -58,17 +58,12 @@ export function expandTemplate(input: ExpandInput): ExpandedOccurrence[] {
 
 	// rrule works in "UTC-as-local": we feed it a UTC DTSTART and interpret
 	// results as UTC wall-clock, then re-anchor to the clinic tz per-occurrence.
-	const rule = RRule.fromString(
-		input.rrule +
-			';DTSTART=' +
-			toRRuleDtStamp(dtstartUtc)
-	);
+	const rule = RRule.fromString(input.rrule + ';DTSTART=' + toRRuleDtStamp(dtstartUtc));
 
 	// Compute an expansion window with a little slack — rrule's `between` is
 	// exclusive on both ends by default so we pass `inc=true`.
 	const start = input.windowStart ?? new Date(dtstartUtc.getTime() - 1);
-	const end =
-		input.windowEnd ?? new Date(dtstartUtc.getTime() + 365 * 24 * 60 * 60 * 1000);
+	const end = input.windowEnd ?? new Date(dtstartUtc.getTime() + 365 * 24 * 60 * 60 * 1000);
 
 	const raw = rule.between(start, end, true);
 

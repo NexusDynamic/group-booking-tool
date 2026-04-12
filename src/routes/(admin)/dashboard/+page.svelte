@@ -14,9 +14,7 @@
 </p>
 
 <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-	<div
-		class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-	>
+	<div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
 		<div class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
 			Experiments
 		</div>
@@ -27,9 +25,7 @@
 			{data.counts.publishedExperiments} published
 		</div>
 	</div>
-	<div
-		class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-	>
+	<div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
 		<div class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
 			Upcoming sessions
 		</div>
@@ -37,9 +33,7 @@
 			{data.counts.upcomingSessions}
 		</div>
 	</div>
-	<div
-		class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-	>
+	<div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
 		<div class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
 			Below minimum
 		</div>
@@ -51,9 +45,7 @@
 			{data.counts.belowMinimum}
 		</div>
 	</div>
-	<div
-		class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-	>
+	<div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
 		<div class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
 			Pending prefs
 		</div>
@@ -61,9 +53,7 @@
 			{data.counts.pendingPreferences}
 		</div>
 	</div>
-	<div
-		class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-	>
+	<div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
 		<a
 			href="/experiments"
 			class="text-xs font-medium text-gray-500 uppercase hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"

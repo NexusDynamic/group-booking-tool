@@ -47,15 +47,20 @@ interface ParticipantInSession {
 	participantFormValues: Record<string, string>;
 }
 
-
-function buildCalendarEvent(eventAttrs: EventAttributes, id: string, host: string, adminEmail: string, adminDisplayName: string | undefined): EventAttributes {
+function buildCalendarEvent(
+	eventAttrs: EventAttributes,
+	id: string,
+	host: string,
+	adminEmail: string,
+	adminDisplayName: string | undefined
+): EventAttributes {
 	return {
 		startInputType: 'utc',
 		endInputType: 'utc',
 		...eventAttrs,
 		organizer: {
 			name: adminDisplayName ?? 'Experiment Organizer',
-			email: adminEmail,
+			email: adminEmail
 		},
 		attendees: [
 			{
@@ -69,7 +74,6 @@ function buildCalendarEvent(eventAttrs: EventAttributes, id: string, host: strin
 		]
 	};
 }
-
 
 function sessionStatusToIcsStatus(status: string): 'CONFIRMED' | 'CANCELLED' | 'TENTATIVE' {
 	switch (status) {
@@ -95,7 +99,11 @@ function sessionStatusForEventName(status: string): string {
 	}
 }
 
-async function loadFeedData(experimentId: string, opts: IcsOpts, includeParticipants = false): Promise<{ experiment: typeof experiments.$inferSelect; sessions: SessionRow[] }> {
+async function loadFeedData(
+	experimentId: string,
+	opts: IcsOpts,
+	includeParticipants = false
+): Promise<{ experiment: typeof experiments.$inferSelect; sessions: SessionRow[] }> {
 	const lookaheadDays = opts.lookaheadDays ?? 365;
 	const cutoff = new Date(Date.now() + lookaheadDays * 24 * 60 * 60 * 1000);
 	const now = new Date();
@@ -113,7 +121,9 @@ async function loadFeedData(experimentId: string, opts: IcsOpts, includeParticip
 		.where(and(eq(sessions.experimentId, experimentId), gte(sessions.startsAt, now)))
 		.orderBy(asc(sessions.startsAt));
 
-	const filtered = sessionRows.filter((r) => (r.status === 'scheduled' || r.status === 'confirmed') && r.startsAt <= cutoff);
+	const filtered = sessionRows.filter(
+		(r) => (r.status === 'scheduled' || r.status === 'confirmed') && r.startsAt <= cutoff
+	);
 
 	// Count confirmed bookings per session in one follow-up query, then map
 	// into the feed shape. Cleaner than a correlated sub-query via drizzle's
@@ -145,7 +155,6 @@ async function loadFeedData(experimentId: string, opts: IcsOpts, includeParticip
 					}
 				}
 			}
-
 		} else {
 			const bookingRows = await db
 				.select({ sessionId: bookings.sessionId, status: bookings.status })
@@ -196,15 +205,21 @@ function buildPublicEvent(
 	s: SessionRow,
 	host: string
 ): EventAttributes {
-	return buildCalendarEvent({
-		uid: `${s.id}@${host}`,
-		title: `${sessionStatusForEventName(s.status)}${exp.name} (${s.confirmedCount}/${s.capacity})`,
-		description: exp.description,
-		location: s.location || undefined,
-		start: toDateArray(s.startsAt),
-		end: toDateArray(s.endsAt),
-		status: sessionStatusToIcsStatus(s.status)
-	}, s.id, host, exp.experimenterEmail, exp.experimenterName);
+	return buildCalendarEvent(
+		{
+			uid: `${s.id}@${host}`,
+			title: `${sessionStatusForEventName(s.status)}${exp.name} (${s.confirmedCount}/${s.capacity})`,
+			description: exp.description,
+			location: s.location || undefined,
+			start: toDateArray(s.startsAt),
+			end: toDateArray(s.endsAt),
+			status: sessionStatusToIcsStatus(s.status)
+		},
+		s.id,
+		host,
+		exp.experimenterEmail,
+		exp.experimenterName
+	);
 }
 
 function buildResearcherEvent(
@@ -222,15 +237,21 @@ function buildResearcherEvent(
 			}
 		});
 	}
-	return buildCalendarEvent({
-		uid: `${s.id}@${host}`,
-		title: `${sessionStatusForEventName(s.status)}${exp.name} (${s.confirmedCount}/${s.capacity})`,
-		description: description,
-		location: s.location || undefined,
-		start: toDateArray(s.startsAt),
-		end: toDateArray(s.endsAt),
-		status: sessionStatusToIcsStatus(s.status)
-	}, s.id, host, exp.experimenterEmail, exp.experimenterName);
+	return buildCalendarEvent(
+		{
+			uid: `${s.id}@${host}`,
+			title: `${sessionStatusForEventName(s.status)}${exp.name} (${s.confirmedCount}/${s.capacity})`,
+			description: description,
+			location: s.location || undefined,
+			start: toDateArray(s.startsAt),
+			end: toDateArray(s.endsAt),
+			status: sessionStatusToIcsStatus(s.status)
+		},
+		s.id,
+		host,
+		exp.experimenterEmail,
+		exp.experimenterName
+	);
 }
 
 function buildParticipantSessionEvent(
@@ -238,15 +259,21 @@ function buildParticipantSessionEvent(
 	s: SessionRow,
 	host: string
 ): EventAttributes {
-	return buildCalendarEvent({
-		uid: `${s.id}@${host}`,
-		title: `${sessionStatusForEventName(s.status)}${exp.name}`,
-		description: exp.description,
-		location: s.location || undefined,
-		start: toDateArray(s.startsAt),
-		end: toDateArray(s.endsAt),
-		status: sessionStatusToIcsStatus(s.status)
-	}, s.id, host, exp.experimenterEmail, exp.experimenterName);
+	return buildCalendarEvent(
+		{
+			uid: `${s.id}@${host}`,
+			title: `${sessionStatusForEventName(s.status)}${exp.name}`,
+			description: exp.description,
+			location: s.location || undefined,
+			start: toDateArray(s.startsAt),
+			end: toDateArray(s.endsAt),
+			status: sessionStatusToIcsStatus(s.status)
+		},
+		s.id,
+		host,
+		exp.experimenterEmail,
+		exp.experimenterName
+	);
 }
 
 function reminderMatchesCondition(condition: string, s: SessionRow): boolean {
@@ -270,16 +297,22 @@ function buildReminderEvent(
 ): EventAttributes {
 	const reminderStart = new Date(s.startsAt.getTime() - rule.offsetMinutesBefore * 60 * 1000);
 	const reminderEnd = new Date(reminderStart.getTime() + rule.durationMinutes * 60 * 1000);
-	return buildCalendarEvent({
-		uid: `${s.id}-reminder-${rule.id}@${host}`,
-		title: `${rule.label} — ${exp.name} (${s.confirmedCount}/${s.capacity})`,
-		description: `Reminder for session ${s.id}. Current booking count: ${s.confirmedCount}/${s.capacity}. Minimum: ${s.minParticipants}.`,
-		start: toDateArray(reminderStart),
-		end: toDateArray(reminderEnd),
-		startInputType: 'utc',
-		endInputType: 'utc',
-		status: 'CONFIRMED'
-	}, s.id, host, exp.experimenterEmail, exp.experimenterName);
+	return buildCalendarEvent(
+		{
+			uid: `${s.id}-reminder-${rule.id}@${host}`,
+			title: `${rule.label} — ${exp.name} (${s.confirmedCount}/${s.capacity})`,
+			description: `Reminder for session ${s.id}. Current booking count: ${s.confirmedCount}/${s.capacity}. Minimum: ${s.minParticipants}.`,
+			start: toDateArray(reminderStart),
+			end: toDateArray(reminderEnd),
+			startInputType: 'utc',
+			endInputType: 'utc',
+			status: 'CONFIRMED'
+		},
+		s.id,
+		host,
+		exp.experimenterEmail,
+		exp.experimenterName
+	);
 }
 
 function renderEvents(events: EventAttributes[]): string {
@@ -328,16 +361,9 @@ export async function buildResearcherFeed(
 	return renderEvents(events);
 }
 
-export async function buildSessionFeed(
-	sessionId: string,
-	opts: IcsOpts = {}
-): Promise<string> {
+export async function buildSessionFeed(sessionId: string, opts: IcsOpts = {}): Promise<string> {
 	const host = opts.host ?? 'localhost';
-	const rows = await db
-		.select()
-		.from(sessions)
-		.where(eq(sessions.id, sessionId))
-		.limit(1);
+	const rows = await db.select().from(sessions).where(eq(sessions.id, sessionId)).limit(1);
 	if (rows.length === 0) throw new Error(`session ${sessionId} not found`);
 	const session = rows[0];
 
@@ -351,8 +377,7 @@ export async function buildSessionFeed(
 
 	const events: EventAttributes[] = [];
 	if (session.status === 'scheduled' || session.status === 'confirmed') {
-
-		events.push(buildParticipantSessionEvent(experiment, { ...session, 'confirmedCount': 0 }, host));
+		events.push(buildParticipantSessionEvent(experiment, { ...session, confirmedCount: 0 }, host));
 	}
 
 	return renderEvents(events);

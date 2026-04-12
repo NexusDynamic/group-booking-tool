@@ -30,10 +30,10 @@ async function isSignupLocked(): Promise<boolean> {
 const handleSignupLock: Handle = async ({ event, resolve }) => {
 	if (event.url.pathname.startsWith('/api/auth/sign-up')) {
 		if (await isSignupLocked()) {
-			return new Response(
-				JSON.stringify({ error: 'Signup is disabled on this instance.' }),
-				{ status: 403, headers: { 'content-type': 'application/json' } }
-			);
+			return new Response(JSON.stringify({ error: 'Signup is disabled on this instance.' }), {
+				status: 403,
+				headers: { 'content-type': 'application/json' }
+			});
 		}
 	}
 	return resolve(event);

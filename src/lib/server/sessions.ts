@@ -101,9 +101,17 @@ export async function createOneOffSession(
 
 export async function updateSession(
 	id: string,
-	patch: Partial<Pick<NewSession, 'startsAt' | 'endsAt' | 'capacity' | 'minParticipants' | 'location' | 'notes' | 'status'>>
+	patch: Partial<
+		Pick<
+			NewSession,
+			'startsAt' | 'endsAt' | 'capacity' | 'minParticipants' | 'location' | 'notes' | 'status'
+		>
+	>
 ): Promise<void> {
-	await db.update(sessions).set({ ...patch, updatedAt: new Date() }).where(eq(sessions.id, id));
+	await db
+		.update(sessions)
+		.set({ ...patch, updatedAt: new Date() })
+		.where(eq(sessions.id, id));
 }
 
 export async function cancelSession(id: string): Promise<void> {

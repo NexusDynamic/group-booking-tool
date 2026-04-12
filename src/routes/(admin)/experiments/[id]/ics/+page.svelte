@@ -29,16 +29,16 @@
 >
 <h1 class="mt-1 text-2xl font-semibold">Calendar feeds</h1>
 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-	Subscribe from Apple Calendar, Google Calendar, Fantastical, etc. Each event title includes a
-	live booking count so you can see fill state at a glance.
+	Subscribe from Apple Calendar, Google Calendar, Fantastical, etc. Each event title includes a live
+	booking count so you can see fill state at a glance.
 </p>
 
 <ExperimentNav />
 
 {#if form?.rotated}
 	<Alert variant="warning">
-		{form.rotated === 'public' ? 'Public' : 'Researcher'} feed token rotated. Any existing
-		subscribers need to re-subscribe.
+		{form.rotated === 'public' ? 'Public' : 'Researcher'} feed token rotated. Any existing subscribers
+		need to re-subscribe.
 	</Alert>
 {/if}
 

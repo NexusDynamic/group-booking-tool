@@ -31,7 +31,8 @@
 			<p class="mt-1 text-green-900 dark:text-green-200">{data.session.startsAtLabel}</p>
 			<p class="text-sm text-green-800 dark:text-green-300">
 				until {data.session.endsAtLabel}
-				{#if data.session.location} · {data.session.location}{/if}
+				{#if data.session.location}
+					· {data.session.location}{/if}
 			</p>
 		</div>
 

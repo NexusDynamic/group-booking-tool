@@ -7,7 +7,9 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from './db/schema';
 
-vi.mock('$env/dynamic/private', () => ({ env: { DATABASE_URL: ':memory:', CLINIC_TZ: 'Europe/Copenhagen' } }));
+vi.mock('$env/dynamic/private', () => ({
+	env: { DATABASE_URL: ':memory:', CLINIC_TZ: 'Europe/Copenhagen' }
+}));
 
 const client = new Database(':memory:');
 const memDb = drizzle(client, { schema });

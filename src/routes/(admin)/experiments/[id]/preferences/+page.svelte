@@ -44,7 +44,8 @@
 <ExperimentNav />
 
 {#if form?.assigned}
-	<Alert variant="success">Assigned to {form.created} session{form.created === 1 ? '' : 's'}.</Alert>
+	<Alert variant="success">Assigned to {form.created} session{form.created === 1 ? '' : 's'}.</Alert
+	>
 {/if}
 {#if form?.declined}
 	<Alert variant="success">Preference declined.</Alert>

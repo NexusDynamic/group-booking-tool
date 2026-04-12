@@ -16,7 +16,7 @@
 
 	let rruleSummary = $derived(
 		data.preference.rrule
-			? data.preference.rrule.match(/BYDAY=([^;]+)/)?.[1] ?? data.preference.rrule
+			? (data.preference.rrule.match(/BYDAY=([^;]+)/)?.[1] ?? data.preference.rrule)
 			: ''
 	);
 </script>

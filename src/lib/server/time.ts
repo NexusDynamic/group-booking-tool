@@ -16,9 +16,7 @@ export const CLINIC_TZ = env.CLINIC_TZ || 'Europe/Copenhagen';
  * compute the offset, then subtract it.
  */
 export function localToUtc(isoLocal: string, tz: string = CLINIC_TZ): Date {
-	const match = isoLocal.match(
-		/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?$/
-	);
+	const match = isoLocal.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?$/);
 	if (!match) {
 		throw new Error(`localToUtc: expected "YYYY-MM-DDTHH:mm[:ss]", got "${isoLocal}"`);
 	}
@@ -46,9 +44,10 @@ export function tzOffsetMs(instant: number | Date, tz: string = CLINIC_TZ): numb
 		second: '2-digit',
 		hour12: false
 	});
-	const parts = Object.fromEntries(
-		dtf.formatToParts(date).map((p) => [p.type, p.value])
-	) as Record<string, string>;
+	const parts = Object.fromEntries(dtf.formatToParts(date).map((p) => [p.type, p.value])) as Record<
+		string,
+		string
+	>;
 	const asUtc = Date.UTC(
 		+parts.year,
 		+parts.month - 1,

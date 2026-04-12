@@ -97,9 +97,16 @@ export async function listPreferencesForExperiment(
 	opts: { status?: BookingPreference['status'] } = {}
 ): Promise<BookingPreference[]> {
 	const where = opts.status
-		? and(eq(bookingPreferences.experimentId, experimentId), eq(bookingPreferences.status, opts.status))
+		? and(
+				eq(bookingPreferences.experimentId, experimentId),
+				eq(bookingPreferences.status, opts.status)
+			)
 		: eq(bookingPreferences.experimentId, experimentId);
-	return db.select().from(bookingPreferences).where(where).orderBy(desc(bookingPreferences.createdAt));
+	return db
+		.select()
+		.from(bookingPreferences)
+		.where(where)
+		.orderBy(desc(bookingPreferences.createdAt));
 }
 
 export async function getPreferenceById(id: string): Promise<BookingPreference | undefined> {
@@ -173,8 +180,7 @@ export async function suggestMatchingSessions(
 	// recurring: expand rrule.
 	if (!pref.rrule || !pref.dtstartLocal || !pref.durationMinutes) return [];
 	const windowStart = pref.windowStart ?? now;
-	const windowEnd =
-		pref.windowEnd ?? new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
+	const windowEnd = pref.windowEnd ?? new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
 
 	const expanded = expandTemplate({
 		rrule: pref.rrule,
@@ -196,12 +202,7 @@ export async function suggestMatchingSessions(
 			status: sessions.status
 		})
 		.from(sessions)
-		.where(
-			and(
-				eq(sessions.experimentId, pref.experimentId),
-				gte(sessions.startsAt, windowStart)
-			)
-		)
+		.where(and(eq(sessions.experimentId, pref.experimentId), gte(sessions.startsAt, windowStart)))
 		.orderBy(asc(sessions.startsAt));
 
 	const expandedMs = new Set(expanded.map((e) => e.startsAt.getTime()));

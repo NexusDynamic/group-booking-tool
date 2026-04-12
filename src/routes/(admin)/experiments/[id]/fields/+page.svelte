@@ -18,10 +18,7 @@
 	);
 
 	function addField() {
-		fields = [
-			...fields,
-			{ key: '', label: '', type: 'text' as FieldType, required: false }
-		];
+		fields = [...fields, { key: '', label: '', type: 'text' as FieldType, required: false }];
 	}
 
 	function removeField(i: number) {

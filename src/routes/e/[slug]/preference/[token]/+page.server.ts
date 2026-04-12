@@ -1,9 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { getExperimentBySlug } from '$lib/server/experiments';
-import {
-	findPreferenceByToken,
-	withdrawPreferenceByToken
-} from '$lib/server/preferences';
+import { findPreferenceByToken, withdrawPreferenceByToken } from '$lib/server/preferences';
 import { formatInTz } from '$lib/server/time';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -24,8 +21,12 @@ export const load: PageServerLoad = async ({ params }) => {
 			rrule: preference.rrule,
 			dtstartLocal: preference.dtstartLocal,
 			durationMinutes: preference.durationMinutes,
-			windowStartLabel: preference.windowStart ? formatInTz(preference.windowStart, undefined, { dateStyle: 'medium' }) : null,
-			windowEndLabel: preference.windowEnd ? formatInTz(preference.windowEnd, undefined, { dateStyle: 'medium' }) : null,
+			windowStartLabel: preference.windowStart
+				? formatInTz(preference.windowStart, undefined, { dateStyle: 'medium' })
+				: null,
+			windowEndLabel: preference.windowEnd
+				? formatInTz(preference.windowEnd, undefined, { dateStyle: 'medium' })
+				: null,
 			notes: preference.notes
 		}
 	};

@@ -50,7 +50,9 @@ export const actions: Actions = {
 	assign: async ({ request }) => {
 		const formData = await request.formData();
 		const preferenceId = String(formData.get('preferenceId') ?? '');
-		const sessionIds = formData.getAll('sessionIds').filter((v) => typeof v === 'string') as string[];
+		const sessionIds = formData
+			.getAll('sessionIds')
+			.filter((v) => typeof v === 'string') as string[];
 		if (!preferenceId || sessionIds.length === 0) {
 			return fail(400, { error: 'Pick at least one session to assign.' });
 		}

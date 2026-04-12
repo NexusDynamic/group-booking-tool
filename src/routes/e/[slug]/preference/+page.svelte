@@ -22,7 +22,9 @@
 	</p>
 
 	{#if form?.error}
-		<p class="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-300">
+		<p
+			class="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-300"
+		>
 			{form.error}
 		</p>
 	{/if}

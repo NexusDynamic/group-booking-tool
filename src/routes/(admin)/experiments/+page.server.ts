@@ -1,9 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
-import {
-	createExperiment,
-	listExperiments,
-	SlugInUseError
-} from '$lib/server/experiments';
+import { createExperiment, listExperiments, SlugInUseError } from '$lib/server/experiments';
 import { experimentFormSchema } from '$lib/schemas/experiment';
 import { slugify } from '$lib/server/slug';
 import { parseForm } from '$lib/server/validate';

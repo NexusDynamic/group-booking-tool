@@ -17,7 +17,7 @@ export type ParseResult<T> =
 			failure: ActionFailure<{
 				errors: Record<string, string>;
 				values: Record<string, string>;
-		  }>;
+			}>;
 	  };
 
 export function parseForm<T extends z.ZodTypeAny>(

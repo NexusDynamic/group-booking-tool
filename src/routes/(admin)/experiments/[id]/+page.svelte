@@ -49,7 +49,7 @@
 {/if}
 
 <form method="post" action="?/update" use:enhance class="mt-6 grid gap-4 sm:grid-cols-2">
-	<label class="sm:col-span-2 block">
+	<label class="block sm:col-span-2">
 		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Name</span>
 		<input
 			name="name"
@@ -71,7 +71,9 @@
 		{/if}
 	</label>
 	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Contact email for experimenter</span>
+		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+			>Contact email for experimenter</span
+		>
 		<input
 			type="email"
 			name="experimenterEmail"
@@ -138,7 +140,7 @@
 			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
 		/>
 	</label>
-	<label class="sm:col-span-2 block">
+	<label class="block sm:col-span-2">
 		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Description</span>
 		<textarea
 			name="description"
@@ -165,7 +167,7 @@
 			>{form?.values?.exclusionCriteria ?? exp.exclusionCriteria}</textarea
 		>
 	</label>
-	<label class="sm:col-span-2 flex items-center gap-2">
+	<label class="flex items-center gap-2 sm:col-span-2">
 		<input
 			type="checkbox"
 			name="excludePriorAttendees"
@@ -178,7 +180,7 @@
 			>Exclude participants who already attended this experiment from signup</span
 		>
 	</label>
-	<div class="sm:col-span-2 flex items-center justify-between">
+	<div class="flex items-center justify-between sm:col-span-2">
 		<button
 			type="submit"
 			class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"

@@ -24,7 +24,6 @@
 
 	let copied = $state<boolean>(false);
 
-
 	async function copy() {
 		const url = data.sessionCalendarUrl;
 		await navigator.clipboard.writeText(url);
@@ -68,20 +67,20 @@
 
 <section class="mt-8">
 	<Card class="p-4">
-	<h2 class="font-semibold">Session iCal url</h2>
-	<div class="mt-3 flex gap-2">
-	<input
-			readonly
-			value={data.sessionCalendarUrl}
-			class="flex-1 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 font-mono text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-		/>
-		<button
-			type="button"
-			onclick={() => copy()}
-			class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-			>{copied ? 'Copied' : 'Copy'}</button
-		>
-	</div>
+		<h2 class="font-semibold">Session iCal url</h2>
+		<div class="mt-3 flex gap-2">
+			<input
+				readonly
+				value={data.sessionCalendarUrl}
+				class="flex-1 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 font-mono text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			/>
+			<button
+				type="button"
+				onclick={() => copy()}
+				class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+				>{copied ? 'Copied' : 'Copy'}</button
+			>
+		</div>
 	</Card>
 </section>
 <section class="mt-8">
@@ -193,7 +192,7 @@
 				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
 			/>
 		</label>
-		<label class="sm:col-span-2 block">
+		<label class="block sm:col-span-2">
 			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Location</span>
 			<input
 				name="location"
@@ -201,7 +200,7 @@
 				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
 			/>
 		</label>
-		<label class="sm:col-span-2 block">
+		<label class="block sm:col-span-2">
 			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Notes</span>
 			<textarea
 				name="notes"

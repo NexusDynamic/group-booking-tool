@@ -3,10 +3,7 @@ import { z } from 'zod';
 const localDateTime = z
 	.string()
 	.trim()
-	.regex(
-		/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?$/,
-		'Use format YYYY-MM-DDTHH:mm'
-	);
+	.regex(/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?$/, 'Use format YYYY-MM-DDTHH:mm');
 
 /**
  * Recurring-availability preference. The participant describes "I can do
@@ -21,7 +18,11 @@ export const recurringPreferenceFormSchema = z.object({
 		.min(1)
 		.regex(/^(MO|TU|WE|TH|FR|SA|SU)(,(MO|TU|WE|TH|FR|SA|SU))*$/, 'Use MO,TU,... tokens'),
 	dtstartLocal: localDateTime,
-	durationMinutes: z.coerce.number().int().min(1).max(24 * 60),
+	durationMinutes: z.coerce
+		.number()
+		.int()
+		.min(1)
+		.max(24 * 60),
 	windowStart: z
 		.string()
 		.trim()
