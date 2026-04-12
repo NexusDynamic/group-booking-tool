@@ -6,6 +6,7 @@ import { auth } from '$lib/server/auth';
 import { db } from '$lib/server/db';
 import { user } from '$lib/server/db/schema';
 import { rateLimit } from '$lib/server/rate-limit';
+import { env } from '$env/dynamic/private';
 
 /**
  * Lock signups once any user exists. The tool is single-researcher; the admin
@@ -40,16 +41,33 @@ const handleSignupLock: Handle = async ({ event, resolve }) => {
 };
 
 /**
- * Rate-limit POSTs to public booking routes. Keyed by the client IP
- * (x-forwarded-for first hop, or direct remote address). In-memory only; a
- * process restart flushes the buckets.
+ * Resolve the real client IP from request headers.
+ *
+ * - Behind Cloudflare: set TRUSTED_PROXY=cloudflare and use CF-Connecting-IP,
+ *   which Cloudflare controls and clients cannot spoof.  X-Forwarded-For must
+ *   NOT be used in that case because Cloudflare appends the real IP but the
+ *   client can inject arbitrary leading values.
+ * - Behind any other trusted reverse proxy (nginx, etc.): use the first value
+ *   of X-Forwarded-For, which the proxy prepends.
+ * - Direct access: fall back to the socket address via getClientAddress().
+ */
+function getClientIp(event: Parameters<Handle>[0]['event']): string {
+	if (env.TRUSTED_PROXY === 'cloudflare') {
+		const ip = event.request.headers.get('cf-connecting-ip');
+		if (ip) return ip;
+	}
+	return (
+		event.request.headers.get('x-forwarded-for')?.split(',')[0].trim() || event.getClientAddress()
+	);
+}
+
+/**
+ * Rate-limit POSTs to public booking routes. Keyed by the client IP.
+ * In-memory only; a process restart flushes the buckets.
  */
 const handlePublicRateLimit: Handle = async ({ event, resolve }) => {
 	if (event.request.method === 'POST' && event.url.pathname.startsWith('/e/')) {
-		const ip =
-			event.request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-			event.getClientAddress();
-		if (!rateLimit(`e:${ip}`)) {
+		if (!rateLimit(`e:${getClientIp(event)}`)) {
 			return new Response('Too many requests — please slow down.', { status: 429 });
 		}
 	}

@@ -26,7 +26,7 @@ pnpm seed:admin        # creates the single admin user, then locks signup
 pnpm dev
 ```
 
-Visit `http://localhost:5173/login` and sign in with the admin credentials.
+Visit `https://localhost:5173/login` and sign in with the admin credentials.
 
 ## Building for production
 
@@ -41,6 +41,73 @@ NODE_ENV=production node build
 Put it behind a reverse proxy that terminates TLS and sets `X-Forwarded-For`
 (used for public rate-limiting). The app reads all configuration from
 environment variables at runtime — see `.env.example` for the full list.
+
+### Docker
+
+A `docker-compose.yml` is provided. Copy `.env.example` to `.env`, fill in the
+values (set `ORIGIN` to your public URL, e.g. `https://booking.example.org`),
+then:
+
+```sh
+docker compose up -d          # standalone, port 3000 bound to 127.0.0.1
+```
+
+The first start applies the schema and seeds the admin account automatically if
+`ADMIN_EMAIL` / `ADMIN_PASSWORD` are set. The SQLite file lives in `./data/`.
+
+An nginx reverse-proxy service is included as an optional Compose profile (see
+[Nginx via Docker](#nginx-via-docker) below). If you already run nginx on the
+host, skip the profile and proxy directly to `127.0.0.1:3000` instead.
+
+### Nginx on the host
+
+If you already run nginx on the host (e.g. managing multiple sites on a VPS),
+proxy directly to `127.0.0.1:3000`. Assuming TLS certificates are already in
+place (e.g. from certbot):
+
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name booking.example.org;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name booking.example.org;
+
+    ssl_certificate     /etc/letsencrypt/live/booking.example.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/booking.example.org/privkey.pem;
+
+    location / {
+        proxy_pass         http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Set `ORIGIN=https://booking.example.org` in `.env` so better-auth scopes its
+cookies correctly and ICS feed URLs are rendered with the right base.
+
+### Nginx via Docker
+
+To also run nginx as a container alongside the app:
+
+```sh
+# Edit nginx/nginx.conf — replace booking.example.org with your domain.
+docker compose --profile proxy up -d
+```
+
+Certificates are expected at `/etc/letsencrypt` on the host (mounted read-only
+into the nginx container). For HTTP-only local testing, swap in
+`nginx/nginx-insecure.conf` via the volumes mount in `docker-compose.yml`.
 
 ### Backups
 
@@ -65,7 +132,7 @@ pnpm lint
 
 ## endpoint details
 
-- All mutating public routes go through an in-memory token-bucket rate limit keyed by client IP.
+- All mutating public routes go through an in-memory token-bucket rate limit keyed by client IP. Set `TRUSTED_PROXY=cloudflare` if the deployment is behind Cloudflare — without it, clients can spoof `X-Forwarded-For` to bypass the limit.
 - Participant self-manage tokens are 256-bit URL-safe random strings; only their SHA-256 hash is stored in the database.
 - Public routes are served with a strict CSP (nonce-based)
 - ICS feed URLs use tokens, as such, should never be shared

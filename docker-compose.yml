@@ -1,0 +1,43 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    volumes:
+      # SQLite database file — back this directory up regularly.
+      - ./data:/data
+    env_file: .env
+    environment:
+      # Override DATABASE_URL so the file lives in the mounted volume.
+      DATABASE_URL: /data/booking.db
+      PORT: '3000'
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/ > /dev/null 2>&1']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    # Bind to loopback only — remove or change to "0.0.0.0:3000:3000" if you
+    # need direct external access without the nginx proxy profile.
+    # When using --profile proxy below this port is only needed for debugging.
+    ports:
+      - '127.0.0.1:3000:3000'
+
+  # Optional nginx reverse proxy.
+  # Start with:  docker compose --profile proxy up -d
+  # When running behind nginx you can remove the ports block from the app
+  # service above so port 3000 is not exposed to the host at all.
+  nginx:
+    image: nginx:alpine
+    profiles: ['proxy']
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      # Default: HTTPS. For HTTP-only dev/testing swap in nginx-insecure.conf.
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # Mount the Let's Encrypt directory so nginx can read the certificates:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      app:
+        condition: service_healthy
