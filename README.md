@@ -1,6 +1,5 @@
 ![Build Status](https://img.shields.io/github/actions/workflow/status/NexusDynamic/group-booking-tool/ci.yml)
 
-
 # Group Booking Tool
 
 A small, self-hosted web app for researchers who run group experiments and need
