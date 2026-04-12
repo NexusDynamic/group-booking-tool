@@ -125,6 +125,10 @@ function baseForm(overrides = {}) {
 		minParticipants: 2,
 		maxParticipants: 4,
 		excludePriorAttendees: true,
+		experimenterName: 'A. Researcher',
+		experimenterEmail: 'researcher@example.com',
+		location: 'Lab 1',
+		notes: '',
 		...overrides
 	};
 }
