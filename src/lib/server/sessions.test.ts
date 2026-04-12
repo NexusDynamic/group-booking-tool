@@ -30,6 +30,9 @@ function createTables() {
 			max_participants INTEGER NOT NULL DEFAULT 1,
 			required_fields TEXT NOT NULL DEFAULT '[]',
 			exclude_prior_attendees INTEGER NOT NULL DEFAULT 1,
+			experimenter_name TEXT NOT NULL DEFAULT 'Experimenter',
+			experimenter_email TEXT NOT NULL DEFAULT 'experimenter@example.com',
+			location TEXT NOT NULL DEFAULT '',
 			is_published INTEGER NOT NULL DEFAULT 0,
 			public_ics_token TEXT NOT NULL,
 			researcher_ics_token TEXT NOT NULL,
@@ -49,6 +52,8 @@ function createTables() {
 			duration_minutes INTEGER NOT NULL,
 			capacity INTEGER NOT NULL,
 			min_participants INTEGER NOT NULL,
+			location TEXT NOT NULL DEFAULT '',
+			notes TEXT NOT NULL DEFAULT '',
 			window_start INTEGER,
 			window_end INTEGER,
 			created_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer))
@@ -66,6 +71,7 @@ function createTables() {
 			location TEXT NOT NULL DEFAULT '',
 			status TEXT NOT NULL DEFAULT 'scheduled',
 			notes TEXT NOT NULL DEFAULT '',
+			public_ics_token TEXT NOT NULL,
 			created_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)),
 			updated_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer))
 		);

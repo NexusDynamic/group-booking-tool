@@ -49,6 +49,9 @@ function createTables() {
 			max_participants INTEGER NOT NULL DEFAULT 1,
 			required_fields TEXT NOT NULL DEFAULT '[]',
 			exclude_prior_attendees INTEGER NOT NULL DEFAULT 1,
+			experimenter_name TEXT NOT NULL DEFAULT 'Experimenter',
+			experimenter_email TEXT NOT NULL DEFAULT 'experimenter@example.com',
+			location TEXT NOT NULL DEFAULT '',
 			is_published INTEGER NOT NULL DEFAULT 0,
 			public_ics_token TEXT NOT NULL,
 			researcher_ics_token TEXT NOT NULL,
@@ -78,6 +81,7 @@ function createTables() {
 			location TEXT NOT NULL DEFAULT '',
 			status TEXT NOT NULL DEFAULT 'scheduled',
 			notes TEXT NOT NULL DEFAULT '',
+			public_ics_token TEXT NOT NULL,
 			created_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)),
 			updated_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer))
 		);
@@ -199,9 +203,9 @@ describe('experiments repo', () => {
 		// Seed a session + participant + booking directly via the underlying client
 		client
 			.prepare(
-				'INSERT INTO sessions (id, experiment_id, starts_at, ends_at, capacity, min_participants) VALUES (?, ?, ?, ?, ?, ?)'
+				'INSERT INTO sessions (id, experiment_id, starts_at, ends_at, capacity, min_participants, public_ics_token) VALUES (?, ?, ?, ?, ?, ?, ?)'
 			)
-			.run('sess-1', e.id, Date.now() + 86_400_000, Date.now() + 86_400_000 + 3_600_000, 4, 2);
+			.run('sess-1', e.id, Date.now() + 86_400_000, Date.now() + 86_400_000 + 3_600_000, 4, 2, 'pub');
 		client
 			.prepare('INSERT INTO participants (id, email_normalised) VALUES (?, ?)')
 			.run('part-1', 'a@b.test');

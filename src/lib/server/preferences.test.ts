@@ -39,6 +39,9 @@ function ddl() {
 			max_participants INTEGER NOT NULL DEFAULT 1,
 			required_fields TEXT NOT NULL DEFAULT '[]',
 			exclude_prior_attendees INTEGER NOT NULL DEFAULT 1,
+			experimenter_name TEXT NOT NULL DEFAULT 'Experimenter',
+			experimenter_email TEXT NOT NULL DEFAULT 'experimenter@example.com',
+			location TEXT NOT NULL DEFAULT '',
 			is_published INTEGER NOT NULL DEFAULT 0,
 			public_ics_token TEXT NOT NULL,
 			researcher_ics_token TEXT NOT NULL,
@@ -63,6 +66,7 @@ function ddl() {
 			location TEXT NOT NULL DEFAULT '',
 			status TEXT NOT NULL DEFAULT 'scheduled',
 			notes TEXT NOT NULL DEFAULT '',
+			public_ics_token TEXT NOT NULL,
 			created_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)),
 			updated_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer))
 		);
@@ -115,9 +119,9 @@ function seedSession(id: string, startsAtIso: string, capacity = 4) {
 	const starts = new Date(startsAtIso).getTime();
 	client
 		.prepare(
-			'INSERT INTO sessions (id, experiment_id, starts_at, ends_at, capacity, min_participants) VALUES (?, ?, ?, ?, ?, ?)'
+			'INSERT INTO sessions (id, experiment_id, starts_at, ends_at, capacity, min_participants, public_ics_token) VALUES (?, ?, ?, ?, ?, ?, ?)'
 		)
-		.run(id, 'exp-1', starts, starts + 60 * 60 * 1000, capacity, 1);
+		.run(id, 'exp-1', starts, starts + 60 * 60 * 1000, capacity, 1, 'pub');
 }
 
 beforeAll(() => ddl());
