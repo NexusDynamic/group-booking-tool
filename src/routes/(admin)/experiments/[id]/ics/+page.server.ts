@@ -1,4 +1,4 @@
-import { error, fail } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import { getExperimentById, rotateIcsToken } from '$lib/server/experiments';
 import type { Actions, PageServerLoad } from './$types';
 

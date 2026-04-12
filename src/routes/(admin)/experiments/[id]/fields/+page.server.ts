@@ -1,5 +1,4 @@
 import { error, fail } from '@sveltejs/kit';
-import { z } from 'zod';
 import { getExperimentById, updateRequiredFields } from '$lib/server/experiments';
 import {
 	parseRequiredFields,

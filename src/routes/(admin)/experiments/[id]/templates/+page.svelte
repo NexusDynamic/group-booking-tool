@@ -4,6 +4,7 @@
 	import ExperimentNav from '$lib/components/ExperimentNav.svelte';
 	import Alert from '$lib/components/Alert.svelte';
 	import Card from '$lib/components/Card.svelte';
+	import { resolve } from '$app/paths';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -27,7 +28,7 @@
 </svelte:head>
 
 <a
-	href={`/experiments/${exp.id}`}
+	href={resolve(`/experiments/${exp.id}`)}
 	class="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
 	>← {exp.name}</a
 >

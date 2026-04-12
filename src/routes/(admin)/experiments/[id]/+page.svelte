@@ -3,6 +3,7 @@
 	import type { ActionData, PageData } from './$types';
 	import ExperimentNav from '$lib/components/ExperimentNav.svelte';
 	import Alert from '$lib/components/Alert.svelte';
+	import { resolve } from '$app/paths';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -16,7 +17,7 @@
 <div class="flex items-center justify-between">
 	<div>
 		<a
-			href="/experiments"
+			href={resolve('/experiments')}
 			class="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
 			>← Experiments</a
 		>

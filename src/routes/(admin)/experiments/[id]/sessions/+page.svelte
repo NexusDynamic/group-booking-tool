@@ -4,6 +4,7 @@
 	import ExperimentNav from '$lib/components/ExperimentNav.svelte';
 	import Alert from '$lib/components/Alert.svelte';
 	import Card from '$lib/components/Card.svelte';
+	import { resolve } from '$app/paths';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -38,7 +39,7 @@
 </svelte:head>
 
 <a
-	href={`/experiments/${exp.id}`}
+	href={resolve(`/experiments/${exp.id}`)}
 	class="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
 	>← {exp.name}</a
 >
@@ -47,13 +48,13 @@
 	<div class="flex items-center gap-3 text-sm">
 		{#if data.upcomingOnly}
 			<a
-				href="?all=1"
+				href={resolve(`/experiments/${exp.id}/sessions?all=1`)}
 				class="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
 				>Show all</a
 			>
 		{:else}
 			<a
-				href="./sessions"
+				href={resolve(`/experiments/${exp.id}/sessions`)}
 				class="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
 				>Upcoming only</a
 			>
@@ -176,7 +177,7 @@
 				<tr class="border-t border-gray-100 dark:border-gray-800">
 					<td class="px-4 py-3">
 						<a
-							href={`/experiments/${exp.id}/sessions/${s.id}`}
+							href={resolve(`/experiments/${exp.id}/sessions/${s.id}`)}
 							class="font-medium text-gray-900 hover:underline dark:text-gray-100"
 							>{s.startsAtLabel}</a
 						>

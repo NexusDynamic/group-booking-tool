@@ -1,16 +1,18 @@
 <script lang="ts">
+	/* eslint svelte/no-navigation-without-resolve: "off" */
 	import type { Snippet } from 'svelte';
 	import { page } from '$app/state';
 	import type { LayoutData } from './$types';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+	import { resolve } from '$app/paths';
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
 	const navItems = [
-		{ href: '/dashboard', label: 'Dashboard' },
-		{ href: '/experiments', label: 'Experiments' },
-		{ href: '/participants', label: 'Participants' },
-		{ href: '/account', label: 'Account' }
+		{ href: resolve('/dashboard'), label: 'Dashboard' },
+		{ href: resolve('/experiments'), label: 'Experiments' },
+		{ href: resolve('/participants'), label: 'Participants' },
+		{ href: resolve('/account'), label: 'Account' }
 	];
 
 	function isActive(href: string): boolean {
@@ -21,7 +23,7 @@
 <div class="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
 	<header class="border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
 		<div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-			<a href="/dashboard" class="text-lg font-semibold">Group Booking</a>
+			<a href={resolve('/dashboard')} class="text-lg font-semibold">Group Booking</a>
 			<nav class="flex items-center gap-1">
 				{#each navItems as item (item.href)}
 					<a

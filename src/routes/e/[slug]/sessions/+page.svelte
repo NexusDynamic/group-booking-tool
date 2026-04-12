@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
+	import { resolve } from '$app/paths';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -19,7 +20,7 @@
 
 <article class="mx-auto max-w-2xl py-10">
 	<a
-		href={`/e/${data.experiment.slug}`}
+		href={resolve(`/e/${data.experiment.slug}`)}
 		class="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
 		>← {data.experiment.name}</a
 	>

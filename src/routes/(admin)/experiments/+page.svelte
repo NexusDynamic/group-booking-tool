@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
+	import { resolve } from '$app/paths';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -189,7 +190,7 @@
 			{#each data.experiments as exp (exp.id)}
 				<li>
 					<a
-						href={`/experiments/${exp.id}`}
+						href={resolve(`/experiments/${exp.id}`)}
 						class="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 hover:border-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-gray-500"
 					>
 						<div>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { resolve } from '$app/paths';
 
 	let { data }: { data: PageData } = $props();
 </script>
@@ -55,21 +56,21 @@
 	</div>
 	<div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
 		<a
-			href="/experiments"
+			href={resolve('/experiments')}
 			class="text-xs font-medium text-gray-500 uppercase hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
 			>Quick links →</a
 		>
 		<ul class="mt-2 space-y-1 text-sm">
 			<li>
 				<a
-					href="/experiments"
+					href={resolve('/experiments')}
 					class="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
 					>Experiments</a
 				>
 			</li>
 			<li>
 				<a
-					href="/participants"
+					href={resolve('/participants')}
 					class="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
 					>Participants</a
 				>
@@ -112,7 +113,7 @@
 						<tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
 							<td class="px-4 py-2">
 								<a
-									href={`/experiments/${u.experimentId}/sessions/${u.id}`}
+									href={resolve(`/experiments/${u.experimentId}/sessions/${u.id}`)}
 									class="font-medium text-gray-900 hover:underline dark:text-gray-100"
 									>{u.experimentName}</a
 								>
