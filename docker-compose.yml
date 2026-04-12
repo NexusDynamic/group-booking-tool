@@ -9,9 +9,9 @@ services:
     environment:
       # Override DATABASE_URL so the file lives in the mounted volume.
       DATABASE_URL: /data/booking.db
-      PORT: '3000'
+      PORT: '${APP_PORT:-3000}'
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/ > /dev/null 2>&1']
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:${APP_PORT:-3000}/ > /dev/null 2>&1']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -20,7 +20,7 @@ services:
     # need direct external access without the nginx proxy profile.
     # When using --profile proxy below this port is only needed for debugging.
     ports:
-      - '127.0.0.1:3000:3000'
+      - '127.0.0.1:${APP_PORT:-3000}:${APP_PORT:-3000}'
 
   # Optional nginx reverse proxy.
   # Start with:  docker compose --profile proxy up -d
