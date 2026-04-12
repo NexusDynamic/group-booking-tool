@@ -61,5 +61,6 @@
 		"better-sqlite3": "^12.8.0",
 		"ics": "^3.11.0",
 		"rrule": "^2.8.1"
-	}
+	},
+	"packageManager": "pnpm@10.32.0"
 }
