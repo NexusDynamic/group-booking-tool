@@ -60,7 +60,7 @@
 		/>
 	</label>
 	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Slug</span>
+		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Contact name</span>
 		<input
 			name="experimenterName"
 			required
@@ -72,9 +72,7 @@
 		{/if}
 	</label>
 	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-			>Contact email for experimenter</span
-		>
+		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Contact email</span>
 		<input
 			type="email"
 			name="experimenterEmail"
