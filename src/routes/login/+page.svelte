@@ -60,7 +60,7 @@
 		</p>
 	</div>
 	<footer
-		class="fixed bottom-0 left-0 mt-12 mb-4 w-full text-center text-sm text-gray-500 dark:text-gray-400"
+		class="fixed bottom-0 left-0 mt-12 mb-0 w-full pb-4 text-center text-sm text-gray-500 dark:text-gray-400"
 	>
 		<p>
 			&copy; {new Date().getFullYear()}
