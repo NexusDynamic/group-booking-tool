@@ -1,6 +1,7 @@
 # ---------- build stage ----------
 FROM node:22-alpine AS builder
 
+RUN npm install -g corepack@latest
 RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 WORKDIR /app
