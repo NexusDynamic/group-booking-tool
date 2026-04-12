@@ -12,7 +12,7 @@ fi
 # --force suppresses interactive confirmation prompts so the container starts
 # unattended. Back up your database before upgrading to a new image version.
 echo "[entrypoint] Applying database schema..."
-node node_modules/.bin/drizzle-kit push --config drizzle.config.ts --force
+node_modules/.bin/drizzle-kit push --config drizzle.config.ts --force
 
 # Seed the initial admin account when credentials are provided.
 # The seed script is a no-op once any user row exists, so it is safe to leave

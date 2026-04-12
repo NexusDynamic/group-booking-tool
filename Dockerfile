@@ -42,8 +42,7 @@ COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 ENV NODE_ENV=production
-# adapter-node reads PORT at runtime; default 3000
+# Default port — overridden at runtime by PORT in docker-compose.yml (APP_PORT).
 ENV PORT=3000
-EXPOSE 3000
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
