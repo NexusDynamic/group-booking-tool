@@ -94,6 +94,17 @@ const handleSecurityHeaders: Handle = async ({ event, resolve }) => {
 	response.headers.set('X-Content-Type-Options', 'nosniff');
 	response.headers.set('Referrer-Policy', 'same-origin');
 	response.headers.set('X-Frame-Options', 'DENY');
+
+	// Prevent Cloudflare Rocket Loader (and other transforming proxies) from
+	// rewriting <script> tags on HTML pages. Rocket Loader strips nonce
+	// attributes, which breaks SvelteKit's nonce-based CSP and stops the page
+	// from hydrating. Cache-Control: no-transform is the documented opt-out.
+	// Scoped to HTML only so static asset caching is unaffected.
+	if (response.headers.get('content-type')?.includes('text/html')) {
+		const existing = response.headers.get('cache-control');
+		response.headers.set('cache-control', existing ? `${existing}, no-transform` : 'no-transform');
+	}
+
 	return response;
 };
 
