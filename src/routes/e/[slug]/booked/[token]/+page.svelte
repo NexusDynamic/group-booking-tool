@@ -1,6 +1,8 @@
 <script lang="ts">
+	/* eslint svelte/no-navigation-without-resolve: "off" */
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -50,7 +52,8 @@
 				Add to your calendar
 			</h3>
 			<a
-				href={data.session.sessionWebcalUrl}
+				href={data.origin.replace(RegExp(`http(s?)://`), 'webcal://') +
+					resolve(`/ics/session/${data.session.sessionToken}.ics`)}
 				class="mt-1 mb-4 inline-block rounded-md border border-blue-300 bg-white px-3 py-2 text-sm text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700"
 				>Open in your calendar app</a
 			>
@@ -62,13 +65,16 @@
 			<div class="mt-3 mb-4 flex gap-2">
 				<input
 					readonly
-					value={data.session.sessionCalendarUrl}
+					value={data.origin + resolve(`/ics/session/${data.session.sessionToken}.ics`)}
 					class="flex-1 rounded-md border border-blue-300 bg-white px-3 py-2 font-mono text-xs dark:border-blue-700 dark:bg-gray-800 dark:text-gray-100"
 				/>
 				<button
 					type="button"
 					onclick={() => {
-						copyUrl('calendar', data.session.sessionCalendarUrl);
+						copyUrl(
+							'calendar',
+							data.origin + resolve(`/ics/session/${data.session.sessionToken}.ics`)
+						);
 					}}
 					class="rounded-md border border-blue-300 bg-white px-3 py-2 text-sm text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700"
 					>{copied === 'calendar' ? 'Copied' : 'Copy'}</button
@@ -107,7 +113,7 @@
 				You may also directly download the file to add your calendar:
 			</p>
 			<a
-				href={data.session.sessionCalendarUrl}
+				href={resolve(`/ics/session/${data.session.sessionToken}.ics`)}
 				download={`booking-${data.booking.id}.ics`}
 				class="mt-2 inline-block rounded-md border border-blue-300 bg-white px-3 py-2 font-mono text-sm text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700"
 			>

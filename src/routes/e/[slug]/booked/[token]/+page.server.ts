@@ -18,8 +18,6 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	}
 
 	const origin = url.origin;
-	const icsUrl = `${origin}/ics/session/${session.publicIcsToken}.ics`;
-	const webcalURL = `webcal://${url.host}/ics/session/${session.publicIcsToken}.ics`;
 
 	return {
 		experiment: {
@@ -37,10 +35,10 @@ export const load: PageServerLoad = async ({ params, url }) => {
 			endsAtLabel: formatInTz(session.endsAt, undefined, { timeStyle: 'short' }),
 			location: session.location,
 			status: session.status,
-			sessionCalendarUrl: icsUrl,
-			sessionWebcalUrl: webcalURL,
+			sessionToken: session.publicIcsToken,
 			notes: session.notes
-		}
+		},
+		origin: origin
 	};
 };
 

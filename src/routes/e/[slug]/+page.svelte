@@ -49,16 +49,17 @@
 			>
 				<div class="font-medium">Pick a session</div>
 				<p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-					Book one specific time slot right away.
+					Book a specific time slot to participate in an experiment.
 				</p>
 			</a>
 			<a
 				href={resolve(`/e/${exp.slug}/multi`)}
 				class="rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
 			>
-				<div class="font-medium">Pick several candidates</div>
+				<div class="font-medium">Pick several potential sessions</div>
 				<p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-					Tick slots that could work; researcher picks one.
+					You may choose multiple time slots that could work for you, and the researcher will
+					confirm with you once you have been assigned to one.
 				</p>
 			</a>
 		</div>
