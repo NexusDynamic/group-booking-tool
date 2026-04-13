@@ -19,7 +19,8 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
 		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes",
-		"seed:admin": "node --env-file=.env --import tsx src/lib/server/seed-admin.ts"
+		"seed:admin": "node --env-file=.env --import tsx src/lib/server/seed-admin.ts",
+		"anonymize": "node --env-file=.env --import tsx src/lib/server/run-anonymize.ts"
 	},
 	"devDependencies": {
 		"@better-auth/cli": "~1.4.21",

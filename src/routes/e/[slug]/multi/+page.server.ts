@@ -1,10 +1,11 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { getExperimentBySlug } from '$lib/server/experiments';
+import { buildPrivacyNotice, getExperimentBySlug } from '$lib/server/experiments';
 import { sessionsWithCounts } from '$lib/server/sessions';
 import { sessionListPreferenceFormSchema } from '$lib/schemas/preference';
 import { createSessionListPreference } from '$lib/server/preferences';
 import { parseForm } from '$lib/server/validate';
 import { formatInTz } from '$lib/server/time';
+import { env } from '$env/dynamic/private';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -23,7 +24,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		}));
 	return {
 		experiment: { id: experiment.id, slug: experiment.slug, name: experiment.name },
-		sessions
+		sessions,
+		privacyNotice: buildPrivacyNotice(experiment, Number(env.DATA_RETENTION_DAYS ?? 90))
 	};
 };
 

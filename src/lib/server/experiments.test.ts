@@ -2,24 +2,21 @@
  * Repo-level tests for experiments.ts.
  *
  * Uses the real drizzle + better-sqlite3 stack against an in-memory database
- * built from a fresh copy of schema.ts, so the tests exercise actual SQL
+ * built from the live schema objects, so the tests exercise actual SQL
  * (unique indexes, FK cascades) rather than mocks.
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from './db/schema';
+import { applySchema, clearTables } from './db/test-helpers';
 
-// Replace $env/dynamic/private import BEFORE importing any module that reads it.
 vi.mock('$env/dynamic/private', () => ({ env: { DATABASE_URL: ':memory:' } }));
 
-// Replace the db module with one that points at our in-memory sqlite instance.
 const client = new Database(':memory:');
 const memDb = drizzle(client, { schema });
-
 vi.mock('./db', () => ({ db: memDb }));
 
-// Import under test AFTER mocks are in place.
 const {
 	createExperiment,
 	deleteExperiment,
@@ -34,90 +31,11 @@ const {
 	updateRequiredFields
 } = await import('./experiments');
 
-function createTables() {
-	// Minimal DDL — just the experiments-related tables needed for these tests.
-	client.exec(`
-		CREATE TABLE experiments (
-			id TEXT PRIMARY KEY NOT NULL,
-			slug TEXT NOT NULL,
-			name TEXT NOT NULL,
-			description TEXT NOT NULL DEFAULT '',
-			duration_minutes INTEGER NOT NULL,
-			inclusion_criteria TEXT NOT NULL DEFAULT '',
-			exclusion_criteria TEXT NOT NULL DEFAULT '',
-			min_participants INTEGER NOT NULL DEFAULT 1,
-			max_participants INTEGER NOT NULL DEFAULT 1,
-			required_fields TEXT NOT NULL DEFAULT '[]',
-			exclude_prior_attendees INTEGER NOT NULL DEFAULT 1,
-			experimenter_name TEXT NOT NULL DEFAULT 'Experimenter',
-			experimenter_email TEXT NOT NULL DEFAULT 'experimenter@example.com',
-			location TEXT NOT NULL DEFAULT '',
-			notes TEXT NOT NULL DEFAULT '',
-			is_published INTEGER NOT NULL DEFAULT 0,
-			public_ics_token TEXT NOT NULL,
-			researcher_ics_token TEXT NOT NULL,
-			created_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)),
-			updated_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer))
-		);
-		CREATE UNIQUE INDEX experiments_slug_idx ON experiments (slug);
-		CREATE UNIQUE INDEX experiments_public_ics_token_idx ON experiments (public_ics_token);
-		CREATE UNIQUE INDEX experiments_researcher_ics_token_idx ON experiments (researcher_ics_token);
+beforeAll(async () => applySchema(client));
+afterAll(() => client.close());
+beforeEach(() => clearTables(client));
 
-		CREATE TABLE participants (
-			id TEXT PRIMARY KEY NOT NULL,
-			email_normalised TEXT NOT NULL,
-			display_name TEXT,
-			created_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer))
-		);
-		CREATE UNIQUE INDEX participants_email_idx ON participants (email_normalised);
-
-		CREATE TABLE sessions (
-			id TEXT PRIMARY KEY NOT NULL,
-			experiment_id TEXT NOT NULL REFERENCES experiments(id) ON DELETE CASCADE,
-			source_template_id TEXT,
-			starts_at INTEGER NOT NULL,
-			ends_at INTEGER NOT NULL,
-			capacity INTEGER NOT NULL,
-			min_participants INTEGER NOT NULL,
-			location TEXT NOT NULL DEFAULT '',
-			status TEXT NOT NULL DEFAULT 'scheduled',
-			notes TEXT NOT NULL DEFAULT '',
-			public_ics_token TEXT NOT NULL,
-			created_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)),
-			updated_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer))
-		);
-
-		CREATE TABLE bookings (
-			id TEXT PRIMARY KEY NOT NULL,
-			session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
-			participant_id TEXT NOT NULL REFERENCES participants(id),
-			snapshot_name TEXT NOT NULL,
-			snapshot_email TEXT NOT NULL,
-			snapshot_fields TEXT NOT NULL DEFAULT '{}',
-			status TEXT NOT NULL DEFAULT 'confirmed',
-			manage_token_hash TEXT NOT NULL,
-			created_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)),
-			updated_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer))
-		);
-		CREATE UNIQUE INDEX bookings_manage_token_idx ON bookings (manage_token_hash);
-	`);
-}
-
-beforeAll(() => {
-	createTables();
-});
-
-afterAll(() => {
-	client.close();
-});
-
-beforeEach(() => {
-	client.exec(
-		'DELETE FROM bookings; DELETE FROM sessions; DELETE FROM participants; DELETE FROM experiments;'
-	);
-});
-
-function baseForm(overrides = {}) {
+function baseForm(overrides: Record<string, unknown> = {}) {
 	return {
 		name: 'Reaction Time Study',
 		slug: 'reaction-time-study',
@@ -132,6 +50,9 @@ function baseForm(overrides = {}) {
 		experimenterEmail: 'researcher@example.com',
 		location: 'Lab 1',
 		notes: '',
+		dataRetentionDays: null,
+		privacyNoticeText: '',
+		privacyNoticeUrl: '',
 		...overrides
 	};
 }
@@ -199,6 +120,11 @@ describe('experiments repo', () => {
 		]);
 	});
 
+	it('persists dataRetentionDays when set', async () => {
+		const e = await createExperiment(baseForm({ dataRetentionDays: 180 }));
+		expect((await getExperimentById(e.id))?.dataRetentionDays).toBe(180);
+	});
+
 	it('deletes an experiment with no bookings', async () => {
 		const e = await createExperiment(baseForm());
 		await deleteExperiment(e.id);
@@ -207,20 +133,11 @@ describe('experiments repo', () => {
 
 	it('refuses to delete when a session has a booking', async () => {
 		const e = await createExperiment(baseForm());
-		// Seed a session + participant + booking directly via the underlying client
 		client
 			.prepare(
 				'INSERT INTO sessions (id, experiment_id, starts_at, ends_at, capacity, min_participants, public_ics_token) VALUES (?, ?, ?, ?, ?, ?, ?)'
 			)
-			.run(
-				'sess-1',
-				e.id,
-				Date.now() + 86_400_000,
-				Date.now() + 86_400_000 + 3_600_000,
-				4,
-				2,
-				'pub'
-			);
+			.run('sess-1', e.id, Date.now() + 86_400_000, Date.now() + 86_400_000 + 3_600_000, 4, 2, 'pub');
 		client
 			.prepare('INSERT INTO participants (id, email_normalised) VALUES (?, ?)')
 			.run('part-1', 'a@b.test');

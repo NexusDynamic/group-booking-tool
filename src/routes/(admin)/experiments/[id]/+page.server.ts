@@ -9,6 +9,7 @@ import {
 } from '$lib/server/experiments';
 import { experimentFormSchema, parseRequiredFields } from '$lib/schemas/experiment';
 import { parseForm } from '$lib/server/validate';
+import { env } from '$env/dynamic/private';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -16,7 +17,8 @@ export const load: PageServerLoad = async ({ params }) => {
 	if (!experiment) throw error(404, 'Experiment not found');
 	return {
 		experiment,
-		requiredFields: parseRequiredFields(experiment.requiredFields)
+		requiredFields: parseRequiredFields(experiment.requiredFields),
+		defaultRetentionDays: Number(env.DATA_RETENTION_DAYS ?? 90)
 	};
 };
 

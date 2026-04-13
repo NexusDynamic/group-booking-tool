@@ -6,6 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from './db/schema';
+import { applySchema, clearTables } from './db/test-helpers';
 
 vi.mock('$env/dynamic/private', () => ({
 	env: { DATABASE_URL: ':memory:', CLINIC_TZ: 'Europe/Copenhagen' }
@@ -18,104 +19,9 @@ vi.mock('./db', () => ({ db: memDb }));
 const { materialiseTemplate, createTemplate } = await import('./sessions');
 const { createExperiment } = await import('./experiments');
 
-function createTables() {
-	client.exec(`
-		CREATE TABLE experiments (
-			id TEXT PRIMARY KEY NOT NULL,
-			slug TEXT NOT NULL,
-			name TEXT NOT NULL,
-			description TEXT NOT NULL DEFAULT '',
-			duration_minutes INTEGER NOT NULL,
-			inclusion_criteria TEXT NOT NULL DEFAULT '',
-			exclusion_criteria TEXT NOT NULL DEFAULT '',
-			min_participants INTEGER NOT NULL DEFAULT 1,
-			max_participants INTEGER NOT NULL DEFAULT 1,
-			required_fields TEXT NOT NULL DEFAULT '[]',
-			exclude_prior_attendees INTEGER NOT NULL DEFAULT 1,
-			experimenter_name TEXT NOT NULL DEFAULT 'Experimenter',
-			experimenter_email TEXT NOT NULL DEFAULT 'experimenter@example.com',
-			location TEXT NOT NULL DEFAULT '',
-			notes TEXT NOT NULL DEFAULT '',
-			is_published INTEGER NOT NULL DEFAULT 0,
-			public_ics_token TEXT NOT NULL,
-			researcher_ics_token TEXT NOT NULL,
-			created_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)),
-			updated_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer))
-		);
-		CREATE UNIQUE INDEX experiments_slug_idx ON experiments (slug);
-		CREATE UNIQUE INDEX experiments_public_ics_token_idx ON experiments (public_ics_token);
-		CREATE UNIQUE INDEX experiments_researcher_ics_token_idx ON experiments (researcher_ics_token);
-
-		CREATE TABLE recurrence_templates (
-			id TEXT PRIMARY KEY NOT NULL,
-			experiment_id TEXT NOT NULL REFERENCES experiments(id) ON DELETE CASCADE,
-			label TEXT NOT NULL,
-			rrule TEXT NOT NULL,
-			dtstart_local TEXT NOT NULL,
-			duration_minutes INTEGER NOT NULL,
-			capacity INTEGER NOT NULL,
-			min_participants INTEGER NOT NULL,
-			location TEXT NOT NULL DEFAULT '',
-			notes TEXT NOT NULL DEFAULT '',
-			window_start INTEGER,
-			window_end INTEGER,
-			created_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer))
-		);
-		CREATE INDEX recurrence_templates_experiment_idx ON recurrence_templates (experiment_id);
-
-		CREATE TABLE sessions (
-			id TEXT PRIMARY KEY NOT NULL,
-			experiment_id TEXT NOT NULL REFERENCES experiments(id) ON DELETE CASCADE,
-			source_template_id TEXT REFERENCES recurrence_templates(id) ON DELETE SET NULL,
-			starts_at INTEGER NOT NULL,
-			ends_at INTEGER NOT NULL,
-			capacity INTEGER NOT NULL,
-			min_participants INTEGER NOT NULL,
-			location TEXT NOT NULL DEFAULT '',
-			status TEXT NOT NULL DEFAULT 'scheduled',
-			notes TEXT NOT NULL DEFAULT '',
-			public_ics_token TEXT NOT NULL,
-			created_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)),
-			updated_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer))
-		);
-		CREATE INDEX sessions_experiment_starts_idx ON sessions (experiment_id, starts_at);
-		CREATE INDEX sessions_starts_idx ON sessions (starts_at);
-		CREATE UNIQUE INDEX sessions_template_starts_idx
-			ON sessions (source_template_id, starts_at)
-			WHERE source_template_id IS NOT NULL;
-
-		CREATE TABLE bookings (
-			id TEXT PRIMARY KEY NOT NULL,
-			session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
-			participant_id TEXT NOT NULL,
-			snapshot_name TEXT NOT NULL,
-			snapshot_email TEXT NOT NULL,
-			snapshot_fields TEXT NOT NULL DEFAULT '{}',
-			status TEXT NOT NULL DEFAULT 'confirmed',
-			manage_token_hash TEXT NOT NULL,
-			created_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)),
-			updated_at INTEGER NOT NULL DEFAULT (cast(unixepoch('subsecond') * 1000 as integer))
-		);
-		CREATE UNIQUE INDEX bookings_manage_token_idx ON bookings (manage_token_hash);
-	`);
-}
-
-beforeAll(() => {
-	createTables();
-});
-
-afterAll(() => {
-	client.close();
-});
-
-beforeEach(() => {
-	client.exec(`
-		DELETE FROM bookings;
-		DELETE FROM sessions;
-		DELETE FROM recurrence_templates;
-		DELETE FROM experiments;
-	`);
-});
+beforeAll(async () => applySchema(client));
+afterAll(() => client.close());
+beforeEach(() => clearTables(client));
 
 async function seedExperiment() {
 	return createExperiment({
@@ -131,7 +37,10 @@ async function seedExperiment() {
 		experimenterName: 'Test Experimenter',
 		experimenterEmail: 'test@example.com',
 		location: 'Test Location',
-		notes: 'Test Notes'
+		notes: 'Test Notes',
+		dataRetentionDays: null,
+		privacyNoticeText: '',
+		privacyNoticeUrl: '',
 	});
 }
 

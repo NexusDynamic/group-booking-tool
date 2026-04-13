@@ -49,7 +49,10 @@ export async function createExperiment(input: ExperimentForm): Promise<Experimen
 			experimenterName: input.experimenterName,
 			experimenterEmail: input.experimenterEmail,
 			location: input.location,
-			notes: input.notes
+			notes: input.notes,
+			dataRetentionDays: input.dataRetentionDays ?? null,
+			privacyNoticeText: input.privacyNoticeText,
+			privacyNoticeUrl: input.privacyNoticeUrl
 		})
 		.returning();
 	return row;
@@ -81,6 +84,9 @@ export async function updateExperiment(
 			experimenterEmail: input.experimenterEmail,
 			location: input.location,
 			notes: input.notes,
+			dataRetentionDays: input.dataRetentionDays ?? null,
+			privacyNoticeText: input.privacyNoticeText,
+			privacyNoticeUrl: input.privacyNoticeUrl,
 			updatedAt: new Date()
 		})
 		.where(eq(experiments.id, id))
@@ -123,6 +129,33 @@ export async function deleteExperiment(id: string): Promise<void> {
 		.limit(1);
 	if (bookedRows.length > 0) throw new ExperimentHasBookingsError(id);
 	await db.delete(experiments).where(eq(experiments.id, id));
+}
+
+export interface PrivacyNotice {
+	text: string;
+	url: string;
+}
+
+/**
+ * Returns the GDPR privacy notice configured for the experiment, or empty
+ * strings when none has been set. Pass `defaultRetentionDays` to include
+ * it in the notice text when no explicit notice URL/text is configured —
+ * useful for generating a minimal fallback message on the booking pages.
+ */
+export function buildPrivacyNotice(
+	experiment: Experiment,
+	defaultRetentionDays?: number
+): PrivacyNotice {
+	const text = experiment.privacyNoticeText?.trim() ?? '';
+	const url = experiment.privacyNoticeUrl?.trim() ?? '';
+	if (text || url) return { text, url };
+	// Auto-generate a minimal notice when no custom text has been set.
+	const days = experiment.dataRetentionDays ?? defaultRetentionDays;
+	const retention = days ? ` Your data will be deleted within ${days} days after the session.` : '';
+	return {
+		text: `Your name and email are stored solely to manage your session booking.${retention}`,
+		url: ''
+	};
 }
 
 export async function rotateIcsToken(id: string, which: 'public' | 'researcher'): Promise<void> {

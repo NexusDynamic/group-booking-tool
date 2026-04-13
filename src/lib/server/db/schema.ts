@@ -54,6 +54,14 @@ export const experiments = sqliteTable(
 		isPublished: integer('is_published', { mode: 'boolean' }).notNull().default(false),
 		publicIcsToken: text('public_ics_token').notNull(),
 		researcherIcsToken: text('researcher_ics_token').notNull(),
+		// GDPR: days after a session ends before participant data is anonymised.
+		// null = use the global DATA_RETENTION_DAYS environment variable (default 90).
+		dataRetentionDays: integer('data_retention_days'),
+		// Free-text notice shown to participants at sign-up (Art. 13 GDPR).
+		// If blank, a default notice is generated from retention period + contact email.
+		privacyNoticeText: text('privacy_notice_text').notNull().default(''),
+		// Optional URL to a full privacy policy page.
+		privacyNoticeUrl: text('privacy_notice_url').notNull().default(''),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},
@@ -136,6 +144,9 @@ export const participants = sqliteTable(
 		id: pk(),
 		emailNormalised: text('email_normalised').notNull(),
 		displayName: text('display_name'),
+		// Set when GDPR anonymisation runs; emailNormalised is replaced with
+		// '<anonymized:{id}>' so the unique constraint is preserved.
+		anonymisedAt: integer('anonymised_at', { mode: 'timestamp_ms' }),
 		createdAt: createdAt()
 	},
 	(t) => [uniqueIndex('participants_email_idx').on(t.emailNormalised)]
@@ -162,6 +173,8 @@ export const bookings = sqliteTable(
 		status: text('status').notNull().default('confirmed'),
 		// sha256 hex of a 32-byte random token; raw token lives only in the URL after creation
 		manageTokenHash: text('manage_token_hash').notNull(),
+		// Set when snapshot fields are scrubbed during GDPR anonymisation.
+		anonymisedAt: integer('anonymised_at', { mode: 'timestamp_ms' }),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},
@@ -202,6 +215,8 @@ export const bookingPreferences = sqliteTable(
 		// 'pending' | 'assigned' | 'declined' | 'withdrawn'
 		status: text('status').notNull().default('pending'),
 		manageTokenHash: text('manage_token_hash').notNull(),
+		// Set when snapshot fields are scrubbed during GDPR anonymisation.
+		anonymisedAt: integer('anonymised_at', { mode: 'timestamp_ms' }),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},

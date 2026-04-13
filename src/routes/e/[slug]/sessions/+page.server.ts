@@ -1,5 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { getExperimentBySlug } from '$lib/server/experiments';
+import { buildPrivacyNotice, getExperimentBySlug } from '$lib/server/experiments';
 import { parseRequiredFields } from '$lib/schemas/experiment';
 import { sessionsWithCounts } from '$lib/server/sessions';
 import { bookingSchemaFor } from '$lib/schemas/booking';
@@ -11,6 +11,7 @@ import {
 } from '$lib/server/bookings';
 import { hasPriorAttendance } from '$lib/server/exclusions';
 import { formatInTz } from '$lib/server/time';
+import { env } from '$env/dynamic/private';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -37,7 +38,8 @@ export const load: PageServerLoad = async ({ params }) => {
 			name: experiment.name
 		},
 		sessions,
-		requiredFields: parseRequiredFields(experiment.requiredFields)
+		requiredFields: parseRequiredFields(experiment.requiredFields),
+		privacyNotice: buildPrivacyNotice(experiment, Number(env.DATA_RETENTION_DAYS ?? 90))
 	};
 };
 

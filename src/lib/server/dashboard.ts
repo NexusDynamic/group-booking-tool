@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gte, inArray, or } from 'drizzle-orm';
 import { db } from './db';
-import { bookingPreferences, bookings, experiments, sessions } from './db/schema';
+import { bookingPreferences, bookings, experiments, participants, sessions } from './db/schema';
 
 /**
  * Dashboard stats + upcoming activity feed. Shape is tailored for the
@@ -125,32 +125,26 @@ export interface ParticipantSummary {
 	noShowCount: number;
 	cancelledCount: number;
 	lastBookingAt: Date | null;
+	anonymisedAt: Date | null;
 }
 
 export async function listParticipantsWithActivity(): Promise<ParticipantSummary[]> {
-	// Single pass: fetch all bookings, aggregate in JS keyed by participant.
+	// Join participants so we pick up anonymisedAt; aggregate booking stats in JS.
 	const rows = await db
 		.select({
-			id: bookings.id,
+			bookingId: bookings.id,
 			participantId: bookings.participantId,
 			status: bookings.status,
 			snapshotEmail: bookings.snapshotEmail,
 			snapshotName: bookings.snapshotName,
-			createdAt: bookings.createdAt
+			createdAt: bookings.createdAt,
+			anonymisedAt: participants.anonymisedAt
 		})
 		.from(bookings)
+		.innerJoin(participants, eq(bookings.participantId, participants.id))
 		.orderBy(desc(bookings.createdAt));
 
-	type Agg = {
-		id: string;
-		email: string;
-		displayName: string | null;
-		confirmedCount: number;
-		attendedCount: number;
-		noShowCount: number;
-		cancelledCount: number;
-		lastBookingAt: Date | null;
-	};
+	type Agg = ParticipantSummary;
 	const byParticipant = new Map<string, Agg>();
 	for (const r of rows) {
 		let agg = byParticipant.get(r.participantId);
@@ -163,7 +157,8 @@ export async function listParticipantsWithActivity(): Promise<ParticipantSummary
 				attendedCount: 0,
 				noShowCount: 0,
 				cancelledCount: 0,
-				lastBookingAt: null
+				lastBookingAt: null,
+				anonymisedAt: r.anonymisedAt
 			};
 			byParticipant.set(r.participantId, agg);
 		}

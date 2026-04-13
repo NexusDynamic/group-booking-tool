@@ -48,7 +48,21 @@ export const experimentFormSchema = z.object({
 	maxParticipants: z.coerce.number().int().min(1).max(1000),
 	location: z.string().max(1000).default(''),
 	notes: z.string().max(5000).default(''),
-	excludePriorAttendees: asBool
+	excludePriorAttendees: asBool,
+	// GDPR: days to retain participant data after a session ends.
+	// Empty / absent = use the server-wide DATA_RETENTION_DAYS default.
+	dataRetentionDays: z.preprocess(
+		(v) => {
+			if (v === '' || v === undefined || v === null) return null;
+			const n = Number(v);
+			return Number.isFinite(n) ? n : null;
+		},
+		z.number().int().min(1, 'Must be at least 1 day').max(3650, '10 years maximum').nullable()
+	),
+	// Free-text Art. 13 notice shown to participants at sign-up.
+	privacyNoticeText: z.string().max(2000).default(''),
+	// Optional URL to a full privacy policy page.
+	privacyNoticeUrl: z.string().max(500).default('')
 });
 export type ExperimentForm = z.infer<typeof experimentFormSchema>;
 

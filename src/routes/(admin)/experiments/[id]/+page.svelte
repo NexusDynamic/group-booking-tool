@@ -191,6 +191,66 @@
 			>Exclude participants who already attended this experiment from signup</span
 		>
 	</label>
+
+	<div class="sm:col-span-2 border-t border-gray-200 dark:border-gray-700 pt-4">
+		<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">GDPR / Privacy</h3>
+		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+			Participant data is automatically anonymised after the retention window. A privacy notice
+			is shown to participants on all booking forms.
+		</p>
+	</div>
+
+	<label class="block">
+		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+			>Data retention (days)</span
+		>
+		<input
+			type="number"
+			name="dataRetentionDays"
+			min="1"
+			max="3650"
+			placeholder={String(data.defaultRetentionDays)}
+			value={form?.values?.dataRetentionDays ?? exp.dataRetentionDays ?? ''}
+			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+		/>
+		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+			Leave blank to use the server default ({data.defaultRetentionDays} days).
+		</p>
+		{#if form?.errors?.dataRetentionDays}
+			<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.dataRetentionDays}</p>
+		{/if}
+	</label>
+
+	<label class="block">
+		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Privacy notice URL</span>
+		<input
+			type="url"
+			name="privacyNoticeUrl"
+			placeholder="https://example.com/privacy"
+			value={form?.values?.privacyNoticeUrl ?? exp.privacyNoticeUrl}
+			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+		/>
+		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+			Optional link to your full privacy policy.
+		</p>
+	</label>
+
+	<label class="block sm:col-span-2">
+		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+			>Privacy notice text</span
+		>
+		<textarea
+			name="privacyNoticeText"
+			rows="3"
+			placeholder="Your name and email are used only to manage your booking…"
+			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			>{form?.values?.privacyNoticeText ?? exp.privacyNoticeText}</textarea
+		>
+		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+			Leave blank to show an auto-generated notice based on the retention window.
+		</p>
+	</label>
+
 	<div class="flex items-center justify-between sm:col-span-2">
 		<button
 			type="submit"
