@@ -10,6 +10,17 @@
 	let copied: string | null = $state(null);
 	let manageUrl = $derived(page.url.href);
 
+	let httpsIcsUrl = $derived(
+		data.origin + resolve(`/ics/session/${data.session.sessionToken}.ics`)
+	);
+	let webcalIcsUrl = $derived(httpsIcsUrl.replace(/^https?:\/\//, 'webcal://'));
+	let googleCalUrl = $derived(
+		`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalIcsUrl)}`
+	);
+	let outlookUrl = $derived(
+		`https://outlook.live.com/calendar/0/addfromweb?url=${encodeURIComponent(httpsIcsUrl)}`
+	);
+
 	async function copyUrl(which: 'manage' | 'calendar', url: string) {
 		await navigator.clipboard.writeText(url);
 		copied = which;
@@ -48,81 +59,63 @@
 		<div
 			class="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20"
 		>
-			<h3 class="mb-2 text-lg font-semibold text-blue-900 dark:text-blue-200">
+			<h3 class="mb-3 text-lg font-semibold text-blue-900 dark:text-blue-200">
 				Add to your calendar
 			</h3>
-			<a
-				href={data.origin.replace(RegExp(`http(s?)://`), 'webcal://') +
-					resolve(`/ics/session/${data.session.sessionToken}.ics`)}
-				class="mt-1 mb-4 inline-block rounded-md border border-blue-300 bg-white px-3 py-2 text-sm text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700"
-				>Open in your calendar app</a
-			>
-			<h4 class="mt-2 font-medium text-blue-900 dark:text-blue-200">Subscribe</h4>
-			<p class="mt-2 text-sm text-blue-800 dark:text-blue-300">
-				If that doesn't work, you can use the following link to subscribe to the session in your
-				calendar app (it should automatically update if changes are made):
+			<p class="mb-3 text-sm text-blue-800 dark:text-blue-300">
+				Subscribe so your calendar stays up to date if the session details change:
 			</p>
-			<div class="mt-3 mb-4 flex gap-2">
+			<div class="flex flex-wrap gap-2">
+				<a
+					href={googleCalUrl}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="inline-flex items-center gap-1.5 rounded-md border border-blue-300 bg-white px-3 py-2 text-sm text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700"
+				>
+					Google Calendar
+				</a>
+				<a
+					href={outlookUrl}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="inline-flex items-center gap-1.5 rounded-md border border-blue-300 bg-white px-3 py-2 text-sm text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700"
+				>
+					Outlook.com
+				</a>
+				<a
+					href={webcalIcsUrl}
+					class="inline-flex items-center gap-1.5 rounded-md border border-blue-300 bg-white px-3 py-2 text-sm text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700"
+				>
+					Apple / other
+				</a>
+			</div>
+			<p class="mt-3 text-sm text-blue-800 dark:text-blue-300">
+				Or copy the subscription URL to paste into your calendar app manually:
+			</p>
+			<div class="mt-2 mb-1 flex gap-2">
 				<input
 					readonly
-					value={data.origin + resolve(`/ics/session/${data.session.sessionToken}.ics`)}
+					value={httpsIcsUrl}
 					class="flex-1 rounded-md border border-blue-300 bg-white px-3 py-2 font-mono text-xs dark:border-blue-700 dark:bg-gray-800 dark:text-gray-100"
 				/>
 				<button
 					type="button"
-					onclick={() => {
-						copyUrl(
-							'calendar',
-							data.origin + resolve(`/ics/session/${data.session.sessionToken}.ics`)
-						);
-					}}
+					onclick={() => copyUrl('calendar', httpsIcsUrl)}
 					class="rounded-md border border-blue-300 bg-white px-3 py-2 text-sm text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700"
 					>{copied === 'calendar' ? 'Copied' : 'Copy'}</button
 				>
 			</div>
-			<!-- instructions for subscribing in various apps -->
-			<p class="mt-2 text-sm text-blue-800 dark:text-blue-300">
-				The method for subscribing to a calendar varies depending on the app you use. See the links
-				below for instructions for common calendar apps:
-			</p>
-			<ul class="mt-2 ml-5 list-disc text-sm text-blue-800 dark:text-blue-300">
-				<li>
-					<a
-						href="https://support.microsoft.com/en-us/office/import-or-subscribe-to-a-calendar-in-outlook-com-or-outlook-on-the-web-cff1429c-5af6-41ec-a5b4-74f2c278e98c"
-						target="_blank"
-						class="text-blue-600 hover:underline dark:text-blue-400">Microsoft Office / Outlook</a
-					>
-				</li>
-				<li>
-					<a
-						href="https://support.google.com/calendar/answer/37100"
-						target="_blank"
-						class="text-blue-600 hover:underline dark:text-blue-400">Google Calendar</a
-					>
-				</li>
-				<li>
-					<a
-						href="https://support.apple.com/guide/calendar/subscribe-to-calendars-icl1022/mac"
-						target="_blank"
-						class="text-blue-600 hover:underline dark:text-blue-400">Apple Calendar</a
-					>
-				</li>
-			</ul>
 			<h4 class="mt-4 font-medium text-blue-900 dark:text-blue-200">Download</h4>
-			<p class="mt-2 text-sm text-blue-800 dark:text-blue-300">
-				You may also directly download the file to add your calendar:
+			<p class="mt-1 mb-2 text-sm text-blue-800 italic dark:text-blue-300">
+				Note: a downloaded file will not update automatically if changes are made.
 			</p>
 			<a
 				href={resolve(`/ics/session/${data.session.sessionToken}.ics`)}
 				download={`booking-${data.booking.id}.ics`}
-				class="mt-2 inline-block rounded-md border border-blue-300 bg-white px-3 py-2 font-mono text-sm text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700"
+				class="inline-block rounded-md border border-blue-300 bg-white px-3 py-2 font-mono text-sm text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700"
 			>
 				Download .ics file
 			</a>
-			<p class="mt-2 text-sm text-blue-800 italic dark:text-blue-300">
-				Note: if you use the downloaded file, it will not be able to automatically update in your
-				calendar.
-			</p>
 		</div>
 
 		<section
