@@ -49,7 +49,19 @@ export const experimentFormSchema = z.object({
 	location: z.string().max(1000).default(''),
 	notes: z.string().max(5000).default(''),
 	excludePriorAttendees: asBool,
-	// GDPR: days to retain participant data after a session ends.
+	// Experiment end date — required for the GDPR retention window.
+	// The anonymization job uses (endDate + retentionDays) as the deletion anchor.
+	// Empty / absent = null (experiment still ongoing; no data will be deleted).
+	endDate: z
+		.preprocess(
+			(v) => {
+				if (v === '' || v === undefined || v === null) return null;
+				return v;
+			},
+			z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD').nullable()
+		)
+		.default(null),
+	// GDPR: days to retain participant data after experiment end date.
 	// Empty / absent = use the server-wide DATA_RETENTION_DAYS default.
 	dataRetentionDays: z.preprocess(
 		(v) => {

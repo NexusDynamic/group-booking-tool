@@ -39,6 +39,7 @@ async function seedExperiment() {
 		location: 'Test Location',
 		notes: 'Test Notes',
 		dataRetentionDays: null,
+		endDate: null,
 		privacyNoticeText: '',
 		privacyNoticeUrl: '',
 	});

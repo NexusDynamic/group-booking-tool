@@ -51,6 +51,7 @@ function baseForm(overrides: Record<string, unknown> = {}) {
 		location: 'Lab 1',
 		notes: '',
 		dataRetentionDays: null,
+		endDate: null,
 		privacyNoticeText: '',
 		privacyNoticeUrl: '',
 		...overrides

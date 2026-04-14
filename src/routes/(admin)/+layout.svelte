@@ -72,6 +72,7 @@
 				target="_blank"
 				rel="noopener noreferrer">Source code</a
 			>.
+			<a class="underline" href="/privacy">Privacy Policy</a>.
 		</p>
 	</footer>
 </div>

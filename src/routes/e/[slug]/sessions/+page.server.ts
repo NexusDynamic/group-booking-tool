@@ -74,6 +74,14 @@ export const actions: Actions = {
 			return fail(400, { error: 'Submission rejected.', values, sessionId });
 		}
 
+		// Privacy notice acknowledgement — required.
+		if (values.consent !== 'on') {
+			const errors: Record<string, string> = {
+				consent: 'You must acknowledge the privacy notice to continue.'
+			};
+			return fail(400, { errors, values, sessionId });
+		}
+
 		// Upsert participant, check exclusion, then create booking atomically.
 		// Zod's extended dynamic schema widens the result to unknown; cast back.
 		const parsedData = result.data as {

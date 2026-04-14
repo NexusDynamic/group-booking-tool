@@ -54,7 +54,12 @@ export const experiments = sqliteTable(
 		isPublished: integer('is_published', { mode: 'boolean' }).notNull().default(false),
 		publicIcsToken: text('public_ics_token').notNull(),
 		researcherIcsToken: text('researcher_ics_token').notNull(),
-		// GDPR: days after a session ends before participant data is anonymised.
+		// Date after which the experiment is considered complete.
+		// Used as the anchor for the GDPR retention window: all participant data is
+		// anonymised (endDate + retentionDays) days after this date.
+		// null = experiment is still ongoing; anonymisation job will skip until set.
+		endDate: integer('end_date', { mode: 'timestamp_ms' }),
+		// GDPR: days after endDate before participant data is anonymised.
 		// null = use the global DATA_RETENTION_DAYS environment variable (default 90).
 		dataRetentionDays: integer('data_retention_days'),
 		// Free-text notice shown to participants at sign-up (Art. 13 GDPR).

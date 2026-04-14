@@ -51,6 +51,7 @@ export async function createExperiment(input: ExperimentForm): Promise<Experimen
 			location: input.location,
 			notes: input.notes,
 			dataRetentionDays: input.dataRetentionDays ?? null,
+			endDate: input.endDate ? new Date(input.endDate) : null,
 			privacyNoticeText: input.privacyNoticeText,
 			privacyNoticeUrl: input.privacyNoticeUrl
 		})
@@ -85,6 +86,7 @@ export async function updateExperiment(
 			location: input.location,
 			notes: input.notes,
 			dataRetentionDays: input.dataRetentionDays ?? null,
+			endDate: input.endDate ? new Date(input.endDate) : null,
 			privacyNoticeText: input.privacyNoticeText,
 			privacyNoticeUrl: input.privacyNoticeUrl,
 			updatedAt: new Date()
@@ -154,7 +156,7 @@ export function buildPrivacyNotice(
 	const retention = days ? ` Your data will be deleted within ${days} days after the session.` : '';
 	return {
 		text: `Your name and email are stored solely to manage your session booking.${retention}`,
-		url: ''
+		url: '/privacy'
 	};
 }
 

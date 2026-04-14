@@ -201,6 +201,28 @@
 	</div>
 
 	<label class="block">
+		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Experiment end date</span>
+		<input
+			type="date"
+			name="endDate"
+			value={form?.values?.endDate ?? (exp.endDate ? new Date(exp.endDate).toISOString().slice(0, 10) : '')}
+			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+		/>
+		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+			Required for automated data retention. Participant data will be anonymised
+			{data.defaultRetentionDays} days after this date (or per the override below).
+			{#if (form?.values?.endDate ?? (exp.endDate ? new Date(exp.endDate).toISOString().slice(0, 10) : ''))}
+				{@const endVal = form?.values?.endDate ?? new Date(exp.endDate!).toISOString().slice(0, 10)}
+				{@const deletionDate = new Date(new Date(endVal).getTime() + (exp.dataRetentionDays ?? data.defaultRetentionDays) * 86_400_000)}
+				Deletion on or after: <strong>{deletionDate.toISOString().slice(0, 10)}</strong>.
+			{/if}
+		</p>
+		{#if form?.errors?.endDate}
+			<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.endDate}</p>
+		{/if}
+	</label>
+
+	<label class="block">
 		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
 			>Data retention (days)</span
 		>

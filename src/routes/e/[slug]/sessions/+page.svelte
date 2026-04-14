@@ -3,6 +3,7 @@
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 	import { resolve } from '$app/paths';
+	import ParticipantFields from '$lib/components/ParticipantFields.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -81,77 +82,12 @@
 
 			<fieldset class="space-y-4">
 				<legend class="text-sm font-medium text-gray-700 dark:text-gray-300">Your details</legend>
-				<label class="block">
-					<span class="text-sm text-gray-700 dark:text-gray-300">Name</span>
-					<input
-						name="name"
-						required
-						value={form?.values?.name ?? ''}
-						class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-					/>
-					{#if form?.errors?.name}
-						<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.name}</p>
-					{/if}
-				</label>
-				<label class="block">
-					<span class="text-sm text-gray-700 dark:text-gray-300">Email</span>
-					<input
-						type="email"
-						name="email"
-						required
-						value={form?.values?.email ?? ''}
-						class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-					/>
-					{#if form?.errors?.email}
-						<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.email}</p>
-					{/if}
-				</label>
-
-				{#each data.requiredFields as f (f.key)}
-					<label class="block">
-						<span class="text-sm text-gray-700 dark:text-gray-300"
-							>{f.label}{#if f.required}<span class="ml-0.5 text-red-600 dark:text-red-400">*</span
-								>{/if}</span
-						>
-						{#if f.type === 'checkbox'}
-							<input
-								type="checkbox"
-								name={`field_${f.key}`}
-								checked={form?.values?.[`field_${f.key}`] === 'on'}
-								class="mt-1 h-4 w-4"
-							/>
-						{:else if f.type === 'number'}
-							<input
-								type="number"
-								name={`field_${f.key}`}
-								required={f.required}
-								value={form?.values?.[`field_${f.key}`] ?? ''}
-								class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-							/>
-						{:else if f.type === 'email'}
-							<input
-								type="email"
-								name={`field_${f.key}`}
-								required={f.required}
-								value={form?.values?.[`field_${f.key}`] ?? ''}
-								class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-							/>
-						{:else}
-							<input
-								type="text"
-								name={`field_${f.key}`}
-								required={f.required}
-								value={form?.values?.[`field_${f.key}`] ?? ''}
-								class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-							/>
-						{/if}
-						{#if form?.errors?.[`field_${f.key}`]}
-							<p class="mt-1 text-sm text-red-600 dark:text-red-400">
-								{form.errors[`field_${f.key}`]}
-							</p>
-						{/if}
-					</label>
-				{/each}
+				<ParticipantFields
+					requiredFields={data.requiredFields}
+					values={form?.values}
+					errors={form?.errors}
+					privacyPolicyUrl={data.privacyNotice.url || '/privacy'}
+				/>
 			</fieldset>
 
 			<!-- honeypot: real users never fill this in -->

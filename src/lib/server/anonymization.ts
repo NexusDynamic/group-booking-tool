@@ -62,11 +62,14 @@ export async function runAnonymizationJob(
 	const now = Date.now();
 
 	// ── 1. Bookings ───────────────────────────────────────────────────────────
-	// Eligible when: session has ended AND retention window has elapsed.
+	// Eligible when the retention window has elapsed.
+	// Reference date: experiment.endDate when set; falls back to session.endsAt
+	// for experiments created before the endDate field was introduced.
 	const unanonymisedBookings = await db
 		.select({
 			bookingId: bookings.id,
 			sessionEndsAt: sessions.endsAt,
+			experimentEndDate: experiments.endDate,
 			retentionDays: experiments.dataRetentionDays
 		})
 		.from(bookings)
@@ -77,7 +80,8 @@ export async function runAnonymizationJob(
 	const bookingIds = unanonymisedBookings
 		.filter((r) => {
 			const days = r.retentionDays ?? defaultRetentionDays;
-			return r.sessionEndsAt.getTime() + days * MS_PER_DAY <= now;
+			const ref = r.experimentEndDate?.getTime() ?? r.sessionEndsAt.getTime();
+			return ref + days * MS_PER_DAY <= now;
 		})
 		.map((r) => r.bookingId);
 
@@ -95,13 +99,14 @@ export async function runAnonymizationJob(
 	}
 
 	// ── 2. Preferences ────────────────────────────────────────────────────────
-	// Use windowEnd as the reference date when present; otherwise updatedAt
-	// (which changes whenever the researcher acts on the preference).
+	// Reference date: experiment.endDate when set; otherwise windowEnd when
+	// present; otherwise updatedAt (which changes whenever the researcher acts).
 	const unanonymisedPrefs = await db
 		.select({
 			prefId: bookingPreferences.id,
 			windowEnd: bookingPreferences.windowEnd,
 			updatedAt: bookingPreferences.updatedAt,
+			experimentEndDate: experiments.endDate,
 			retentionDays: experiments.dataRetentionDays
 		})
 		.from(bookingPreferences)
@@ -111,7 +116,8 @@ export async function runAnonymizationJob(
 	const prefIds = unanonymisedPrefs
 		.filter((r) => {
 			const days = r.retentionDays ?? defaultRetentionDays;
-			const ref = r.windowEnd?.getTime() ?? r.updatedAt.getTime();
+			const ref =
+				r.experimentEndDate?.getTime() ?? r.windowEnd?.getTime() ?? r.updatedAt.getTime();
 			return ref + days * MS_PER_DAY <= now;
 		})
 		.map((r) => r.prefId);

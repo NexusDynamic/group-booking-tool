@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 	import { resolve } from '$app/paths';
+	import ParticipantFields from '$lib/components/ParticipantFields.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
@@ -71,31 +72,13 @@
 			</fieldset>
 
 			<div class="space-y-4">
-				<label class="block">
-					<span class="text-sm text-gray-700 dark:text-gray-300">Name</span>
-					<input
-						name="name"
-						required
-						value={form?.values?.name ?? ''}
-						class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-					/>
-					{#if form?.errors?.name}
-						<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.name}</p>
-					{/if}
-				</label>
-				<label class="block">
-					<span class="text-sm text-gray-700 dark:text-gray-300">Email</span>
-					<input
-						type="email"
-						name="email"
-						required
-						value={form?.values?.email ?? ''}
-						class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-					/>
-					{#if form?.errors?.email}
-						<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.email}</p>
-					{/if}
-				</label>
+				<ParticipantFields
+					requiredFields={data.requiredFields}
+					values={form?.values}
+					errors={form?.errors}
+					privacyPolicyUrl={data.privacyNotice.url || '/privacy'}
+				/>
+
 				<label class="block">
 					<span class="text-sm text-gray-700 dark:text-gray-300">Notes (optional)</span>
 					<textarea
