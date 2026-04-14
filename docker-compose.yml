@@ -38,7 +38,7 @@ services:
     command: "echo '0 2 * * * cd /app && node --import tsx src/lib/server/run-anonymize.ts >> /proc/1/fd/1 2>&1' | crontab - && crond -f -l 8"
     depends_on:
       app:
-        condition: service_healthy
+        condition: service_started
 
   # Optional nginx reverse proxy.
   # Start with:  docker compose --profile proxy up -d
