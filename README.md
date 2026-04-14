@@ -113,6 +113,26 @@ into the nginx container). For HTTP-only local testing, swap in
 
 `DATABASE_URL` is a single SQLite file. Back it up. There is no other state.
 
+### Data retention / GDPR anonymisation
+
+The app ships a `pnpm anonymize` script that anonymises participant data that
+has passed its retention window (90 days by default, or `DATA_RETENTION_DAYS`
+from `.env`). With Docker Compose the included `anonymize` service runs it
+automatically at 02:00 UTC every night — no extra setup required.
+
+If you are **not** using Docker Compose, add a system cron entry on the host
+(run `crontab -e` or drop a file in `/etc/cron.d/`):
+
+```
+# Run the anonymisation sweep daily at 02:00; adjust the path to match your
+# installation directory.
+0 2 * * * cd /path/to/group-booking-tool && pnpm anonymize >> /var/log/group-booking-anonymize.log 2>&1
+```
+
+The script loads `DATABASE_URL` and `DATA_RETENTION_DAYS` from `.env`
+automatically, so no extra environment setup is needed beyond what is already
+in your `.env` file.
+
 ## Testing
 
 ```sh
