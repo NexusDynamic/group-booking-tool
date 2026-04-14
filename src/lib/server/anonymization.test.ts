@@ -94,9 +94,7 @@ function seedSession(id: string, experimentId: string, endsAtOffset: number) {
 
 /** Insert a participant row. */
 function seedParticipant(id: string, email = `${id}@test.example`) {
-	client
-		.prepare('INSERT INTO participants (id, email_normalised) VALUES (?, ?)')
-		.run(id, email);
+	client.prepare('INSERT INTO participants (id, email_normalised) VALUES (?, ?)').run(id, email);
 }
 
 /** Insert a booking row (status defaults to 'confirmed'). */
@@ -141,7 +139,15 @@ function seedPreference(
 				 kind, preferred_session_ids, manage_token_hash, window_end)
 			 VALUES (?, ?, ?, ?, ?, 'session_list', '[]', ?, ?)`
 		)
-		.run(id, experimentId, participantId, 'Test Name', 'test@example.test', `hash-${id}`, windowEnd);
+		.run(
+			id,
+			experimentId,
+			participantId,
+			'Test Name',
+			'test@example.test',
+			`hash-${id}`,
+			windowEnd
+		);
 }
 
 /** Insert a better-auth session row. */
@@ -169,14 +175,16 @@ function getBooking(id: string) {
 	return client.prepare('SELECT * FROM bookings WHERE id = ?').get(id) as Record<string, unknown>;
 }
 function getPreference(id: string) {
-	return client
-		.prepare('SELECT * FROM booking_preferences WHERE id = ?')
-		.get(id) as Record<string, unknown>;
+	return client.prepare('SELECT * FROM booking_preferences WHERE id = ?').get(id) as Record<
+		string,
+		unknown
+	>;
 }
 function getParticipant(id: string) {
-	return client
-		.prepare('SELECT * FROM participants WHERE id = ?')
-		.get(id) as Record<string, unknown>;
+	return client.prepare('SELECT * FROM participants WHERE id = ?').get(id) as Record<
+		string,
+		unknown
+	>;
 }
 function authSessionCount() {
 	return (client.prepare('SELECT COUNT(*) as n FROM "session"').get() as { n: number }).n;

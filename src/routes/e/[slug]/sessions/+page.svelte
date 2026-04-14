@@ -99,17 +99,9 @@
 			</div>
 			<input type="hidden" name="startedAt" value={startedAt} />
 
-			{#if data.privacyNotice.text || data.privacyNotice.url}
+			{#if data.privacyNotice.text}
 				<p class="text-xs text-gray-500 dark:text-gray-400">
 					{#if data.privacyNotice.text}{data.privacyNotice.text}{/if}
-					{#if data.privacyNotice.url}
-						{' '}<a
-							href={data.privacyNotice.url}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="underline hover:text-gray-700 dark:hover:text-gray-300">Privacy policy</a
-						>
-					{/if}
 				</p>
 			{/if}
 

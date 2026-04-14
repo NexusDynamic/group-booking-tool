@@ -41,7 +41,7 @@ async function seedExperiment() {
 		dataRetentionDays: null,
 		endDate: null,
 		privacyNoticeText: '',
-		privacyNoticeUrl: '',
+		privacyNoticeUrl: ''
 	});
 }
 

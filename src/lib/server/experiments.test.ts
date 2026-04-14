@@ -138,7 +138,15 @@ describe('experiments repo', () => {
 			.prepare(
 				'INSERT INTO sessions (id, experiment_id, starts_at, ends_at, capacity, min_participants, public_ics_token) VALUES (?, ?, ?, ?, ?, ?, ?)'
 			)
-			.run('sess-1', e.id, Date.now() + 86_400_000, Date.now() + 86_400_000 + 3_600_000, 4, 2, 'pub');
+			.run(
+				'sess-1',
+				e.id,
+				Date.now() + 86_400_000,
+				Date.now() + 86_400_000 + 3_600_000,
+				4,
+				2,
+				'pub'
+			);
 		client
 			.prepare('INSERT INTO participants (id, email_normalised) VALUES (?, ?)')
 			.run('part-1', 'a@b.test');

@@ -22,7 +22,6 @@
  */
 
 import { and, eq, inArray, isNull, lte } from 'drizzle-orm';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import {
 	bookingPreferences,
@@ -116,8 +115,7 @@ export async function runAnonymizationJob(
 	const prefIds = unanonymisedPrefs
 		.filter((r) => {
 			const days = r.retentionDays ?? defaultRetentionDays;
-			const ref =
-				r.experimentEndDate?.getTime() ?? r.windowEnd?.getTime() ?? r.updatedAt.getTime();
+			const ref = r.experimentEndDate?.getTime() ?? r.windowEnd?.getTime() ?? r.updatedAt.getTime();
 			return ref + days * MS_PER_DAY <= now;
 		})
 		.map((r) => r.prefId);

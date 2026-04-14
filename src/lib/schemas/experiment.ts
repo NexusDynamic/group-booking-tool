@@ -58,19 +58,19 @@ export const experimentFormSchema = z.object({
 				if (v === '' || v === undefined || v === null) return null;
 				return v;
 			},
-			z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD').nullable()
+			z
+				.string()
+				.regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD')
+				.nullable()
 		)
 		.default(null),
 	// GDPR: days to retain participant data after experiment end date.
 	// Empty / absent = use the server-wide DATA_RETENTION_DAYS default.
-	dataRetentionDays: z.preprocess(
-		(v) => {
-			if (v === '' || v === undefined || v === null) return null;
-			const n = Number(v);
-			return Number.isFinite(n) ? n : null;
-		},
-		z.number().int().min(1, 'Must be at least 1 day').max(3650, '10 years maximum').nullable()
-	),
+	dataRetentionDays: z.preprocess((v) => {
+		if (v === '' || v === undefined || v === null) return null;
+		const n = Number(v);
+		return Number.isFinite(n) ? n : null;
+	}, z.number().int().min(1, 'Must be at least 1 day').max(3650, '10 years maximum').nullable()),
 	// Free-text Art. 13 notice shown to participants at sign-up.
 	privacyNoticeText: z.string().max(2000).default(''),
 	// Optional URL to a full privacy policy page.

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { RequiredField } from '$lib/schemas/experiment';
+	import { resolve } from '$app/paths';
 
 	interface Props {
 		requiredFields: RequiredField[];
@@ -8,7 +9,9 @@
 		privacyPolicyUrl?: string;
 	}
 
-	let { requiredFields, values, errors, privacyPolicyUrl = '/privacy' }: Props = $props();
+	const privacyPolicyUrl = '/privacy';
+
+	let { requiredFields, values, errors }: Props = $props();
 </script>
 
 <label class="block">
@@ -41,7 +44,8 @@
 {#each requiredFields as f (f.key)}
 	<label class="block">
 		<span class="text-sm text-gray-700 dark:text-gray-300"
-			>{f.label}{#if f.required}<span class="ml-0.5 text-red-600 dark:text-red-400">*</span>{/if}</span
+			>{f.label}{#if f.required}<span class="ml-0.5 text-red-600 dark:text-red-400">*</span
+				>{/if}</span
 		>
 		{#if f.type === 'checkbox'}
 			<input
@@ -92,7 +96,7 @@
 	<span class="text-sm text-gray-700 dark:text-gray-300">
 		I have read and acknowledge the
 		<a
-			href={privacyPolicyUrl}
+			href={resolve(privacyPolicyUrl)}
 			target="_blank"
 			rel="noopener noreferrer"
 			class="underline hover:text-gray-900 dark:hover:text-gray-100">privacy notice</a

@@ -78,7 +78,8 @@ export const actions: Actions = {
 		const snapshotFields: Record<string, unknown> = {};
 		for (const f of requiredFields) {
 			const key = `field_${f.key}`;
-			if (key in extraResult.data) snapshotFields[f.key] = (extraResult.data as Record<string, unknown>)[key];
+			if (key in extraResult.data)
+				snapshotFields[f.key] = (extraResult.data as Record<string, unknown>)[key];
 		}
 
 		const { rawToken } = await createSessionListPreference({

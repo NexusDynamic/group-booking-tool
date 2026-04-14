@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+	import { resolve } from '$app/paths';
 
 	let { children } = $props();
 </script>
@@ -26,7 +27,7 @@
 				target="_blank"
 				rel="noopener noreferrer">Source code</a
 			>.
-			<a class="underline" href="/privacy">Privacy Policy</a>.
+			<a class="underline" href={resolve('/privacy')}>Privacy Policy</a>.
 		</p>
 	</footer>
 </div>

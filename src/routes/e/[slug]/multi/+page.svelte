@@ -76,7 +76,6 @@
 					requiredFields={data.requiredFields}
 					values={form?.values}
 					errors={form?.errors}
-					privacyPolicyUrl={data.privacyNotice.url || '/privacy'}
 				/>
 
 				<label class="block">
@@ -94,20 +93,11 @@
 				<input type="text" name="honeypot" tabindex="-1" autocomplete="off" />
 			</div>
 
-			{#if data.privacyNotice.text || data.privacyNotice.url}
+			{#if data.privacyNotice.text}
 				<p class="text-xs text-gray-500 dark:text-gray-400">
 					{#if data.privacyNotice.text}{data.privacyNotice.text}{/if}
-					{#if data.privacyNotice.url}
-						{' '}<a
-							href={data.privacyNotice.url}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="underline hover:text-gray-700 dark:hover:text-gray-300">Privacy policy</a
-						>
-					{/if}
 				</p>
 			{/if}
-
 			<button
 				type="submit"
 				class="w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"

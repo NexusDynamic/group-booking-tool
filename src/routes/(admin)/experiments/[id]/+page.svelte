@@ -192,11 +192,11 @@
 		>
 	</label>
 
-	<div class="sm:col-span-2 border-t border-gray-200 dark:border-gray-700 pt-4">
+	<div class="border-t border-gray-200 pt-4 sm:col-span-2 dark:border-gray-700">
 		<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">GDPR / Privacy</h3>
 		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-			Participant data is automatically anonymised after the retention window. A privacy notice
-			is shown to participants on all booking forms.
+			Participant data is automatically anonymised after the retention window. A privacy notice is
+			shown to participants on all booking forms.
 		</p>
 	</div>
 
@@ -205,15 +205,21 @@
 		<input
 			type="date"
 			name="endDate"
-			value={form?.values?.endDate ?? (exp.endDate ? new Date(exp.endDate).toISOString().slice(0, 10) : '')}
+			value={form?.values?.endDate ??
+				(exp.endDate ? new Date(exp.endDate).toISOString().slice(0, 10) : '')}
 			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
 		/>
 		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
 			Required for automated data retention. Participant data will be anonymised
 			{data.defaultRetentionDays} days after this date (or per the override below).
-			{#if (form?.values?.endDate ?? (exp.endDate ? new Date(exp.endDate).toISOString().slice(0, 10) : ''))}
+			{#if form?.values?.endDate ?? (exp.endDate ? new Date(exp.endDate)
+							.toISOString()
+							.slice(0, 10) : '')}
 				{@const endVal = form?.values?.endDate ?? new Date(exp.endDate!).toISOString().slice(0, 10)}
-				{@const deletionDate = new Date(new Date(endVal).getTime() + (exp.dataRetentionDays ?? data.defaultRetentionDays) * 86_400_000)}
+				{@const deletionDate = new Date(
+					new Date(endVal).getTime() +
+						(exp.dataRetentionDays ?? data.defaultRetentionDays) * 86_400_000
+				)}
 				Deletion on or after: <strong>{deletionDate.toISOString().slice(0, 10)}</strong>.
 			{/if}
 		</p>
@@ -223,9 +229,7 @@
 	</label>
 
 	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-			>Data retention (days)</span
-		>
+		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Data retention (days)</span>
 		<input
 			type="number"
 			name="dataRetentionDays"
@@ -258,9 +262,7 @@
 	</label>
 
 	<label class="block sm:col-span-2">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-			>Privacy notice text</span
-		>
+		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Privacy notice text</span>
 		<textarea
 			name="privacyNoticeText"
 			rows="3"

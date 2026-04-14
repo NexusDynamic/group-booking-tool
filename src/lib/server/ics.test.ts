@@ -32,7 +32,17 @@ function seedExperiment(opts: { description?: string } = {}) {
 				 public_ics_token, researcher_ics_token)
 			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 		)
-		.run('exp-1', 'exp-1', 'Reaction Time Study', opts.description ?? 'A study', 60, 2, 4, 'pub', 'res');
+		.run(
+			'exp-1',
+			'exp-1',
+			'Reaction Time Study',
+			opts.description ?? 'A study',
+			60,
+			2,
+			4,
+			'pub',
+			'res'
+		);
 }
 
 // Seed a future session so the ICS lookahead includes it.
@@ -43,12 +53,22 @@ function seedSession(id: string, startsAt: Date, capacity = 4, minParticipants =
 				(id, experiment_id, starts_at, ends_at, capacity, min_participants, public_ics_token)
 			 VALUES (?, ?, ?, ?, ?, ?, ?)`
 		)
-		.run(id, 'exp-1', startsAt.getTime(), startsAt.getTime() + 60 * 60 * 1000, capacity, minParticipants, `pub-${id}`);
+		.run(
+			id,
+			'exp-1',
+			startsAt.getTime(),
+			startsAt.getTime() + 60 * 60 * 1000,
+			capacity,
+			minParticipants,
+			`pub-${id}`
+		);
 }
 
 function seedBooking(id: string, sessionId: string, status = 'confirmed') {
 	const pid = `p-${id}`;
-	client.prepare('INSERT INTO participants (id, email_normalised) VALUES (?, ?)').run(pid, `${id}@b.test`);
+	client
+		.prepare('INSERT INTO participants (id, email_normalised) VALUES (?, ?)')
+		.run(pid, `${id}@b.test`);
 	client
 		.prepare(
 			`INSERT INTO bookings

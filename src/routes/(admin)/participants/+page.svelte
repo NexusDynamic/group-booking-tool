@@ -101,11 +101,7 @@
 									<button
 										type="submit"
 										onclick={(e) => {
-											if (
-												!confirm(
-													`Anonymise ${p.displayName ?? p.email}? This cannot be undone.`
-												)
-											)
+											if (!confirm(`Anonymise ${p.displayName ?? p.email}? This cannot be undone.`))
 												e.preventDefault();
 										}}
 										class="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
