@@ -37,9 +37,9 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY drizzle.config.ts ./
 COPY src/lib/server ./src/lib/server
 
-# Startup script
-COPY docker-entrypoint.sh ./
-RUN chmod +x docker-entrypoint.sh
+# Startup scripts
+COPY docker-entrypoint.sh docker-anonymize.sh ./
+RUN chmod +x docker-entrypoint.sh docker-anonymize.sh
 
 ENV NODE_ENV=production
 # Default port — overridden at runtime by PORT in docker-compose.yml (APP_PORT).

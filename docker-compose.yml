@@ -11,7 +11,7 @@ services:
       DATABASE_URL: /data/booking.db
       PORT: '${APP_PORT:-3000}'
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:${APP_PORT:-3000}/ > /dev/null 2>&1']
+      test: ['CMD-SHELL', 'wget -qO /dev/null http://localhost:${PORT:-3000}/login']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -34,8 +34,7 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: /data/booking.db
-    entrypoint: ['/bin/sh', '-c']
-    command: "echo '0 2 * * * cd /app && node --import tsx src/lib/server/run-anonymize.ts >> /proc/1/fd/1 2>&1' | crontab - && crond -f -l 8"
+    entrypoint: ['./docker-anonymize.sh']
     depends_on:
       app:
         condition: service_started
