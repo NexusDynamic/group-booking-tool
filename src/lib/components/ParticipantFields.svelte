@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { RequiredField } from '$lib/schemas/experiment';
 	import { resolve } from '$app/paths';
+	import { inputClass } from '$lib/styles';
 
 	interface Props {
 		requiredFields: RequiredField[];
@@ -16,12 +17,7 @@
 
 <label class="block">
 	<span class="text-sm text-gray-700 dark:text-gray-300">Name</span>
-	<input
-		name="name"
-		required
-		value={values?.name ?? ''}
-		class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-	/>
+	<input name="name" required value={values?.name ?? ''} class={inputClass} />
 	{#if errors?.name}
 		<p class="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name}</p>
 	{/if}
@@ -29,13 +25,7 @@
 
 <label class="block">
 	<span class="text-sm text-gray-700 dark:text-gray-300">Email</span>
-	<input
-		type="email"
-		name="email"
-		required
-		value={values?.email ?? ''}
-		class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-	/>
+	<input type="email" name="email" required value={values?.email ?? ''} class={inputClass} />
 	{#if errors?.email}
 		<p class="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email}</p>
 	{/if}
@@ -60,7 +50,7 @@
 				name={`field_${f.key}`}
 				required={f.required}
 				value={values?.[`field_${f.key}`] ?? ''}
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				class={inputClass}
 			/>
 		{:else if f.type === 'email'}
 			<input
@@ -68,7 +58,7 @@
 				name={`field_${f.key}`}
 				required={f.required}
 				value={values?.[`field_${f.key}`] ?? ''}
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				class={inputClass}
 			/>
 		{:else}
 			<input
@@ -76,7 +66,7 @@
 				name={`field_${f.key}`}
 				required={f.required}
 				value={values?.[`field_${f.key}`] ?? ''}
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				class={inputClass}
 			/>
 		{/if}
 		{#if errors?.[`field_${f.key}`]}

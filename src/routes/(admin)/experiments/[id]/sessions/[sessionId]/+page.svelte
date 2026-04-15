@@ -4,7 +4,9 @@
 	import ExperimentNav from '$lib/components/ExperimentNav.svelte';
 	import Alert from '$lib/components/Alert.svelte';
 	import Card from '$lib/components/Card.svelte';
+	import FormField from '$lib/components/FormField.svelte';
 	import { resolve } from '$app/paths';
+	import { inputClass } from '$lib/styles';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	let exp = $derived(data.experiment);
@@ -73,7 +75,7 @@
 			<input
 				readonly
 				value={data.sessionCalendarUrl}
-				class="flex-1 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 font-mono text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				class="{inputClass} flex-1 bg-gray-50 font-mono text-xs"
 			/>
 			<button
 				type="button"
@@ -148,71 +150,55 @@
 <section class="mt-10">
 	<h2 class="text-lg font-semibold">Edit session</h2>
 	<form method="post" action="?/update" use:enhance class="mt-4 grid gap-4 sm:grid-cols-2">
-		<label class="block">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-				>Start (your local time)</span
-			>
+		<FormField label="Start (your local time)">
 			<input
 				type="datetime-local"
 				name="startsAtLocal"
 				required
-				value={toLocalInput(session.startsAt)}
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				value={form?.values?.startsAtLocal ?? toLocalInput(session.startsAt)}
+				class={inputClass}
 			/>
-		</label>
-		<label class="block">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Duration (minutes)</span>
+		</FormField>
+		<FormField label="Duration (minutes)">
 			<input
 				type="number"
 				name="durationMinutes"
 				min="1"
 				required
-				value={durationMinutes}
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				value={form?.values?.durationMinutes ?? durationMinutes}
+				class={inputClass}
 			/>
-		</label>
-		<label class="block">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Max participants</span>
+		</FormField>
+		<FormField label="Max participants">
 			<input
 				type="number"
 				name="capacity"
 				min="1"
 				required
-				value={session.capacity}
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				value={form?.values?.capacity ?? session.capacity}
+				class={inputClass}
 			/>
-		</label>
-		<label class="block">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Min participants</span>
+		</FormField>
+		<FormField label="Min participants">
 			<input
 				type="number"
 				name="minParticipants"
 				min="1"
 				required
-				value={session.minParticipants}
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				value={form?.values?.minParticipants ?? session.minParticipants}
+				class={inputClass}
 			/>
-		</label>
-		<label class="block sm:col-span-2">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Location</span>
-			<textarea
-				name="location"
-				rows="3"
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-				>{session.location}</textarea
+		</FormField>
+		<FormField label="Location" class="sm:col-span-2">
+			<textarea name="location" rows="3" class={inputClass}
+				>{form?.values?.location ?? session.location}</textarea
 			>
-		</label>
-		<label class="block sm:col-span-2">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-				>Notes for participants</span
+		</FormField>
+		<FormField label="Notes for participants" class="sm:col-span-2">
+			<textarea name="notes" rows="3" class={inputClass}
+				>{form?.values?.notes ?? session.notes}</textarea
 			>
-			<textarea
-				name="notes"
-				rows="3"
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-				>{session.notes}</textarea
-			>
-		</label>
+		</FormField>
 		<div class="sm:col-span-2">
 			<button
 				type="submit"

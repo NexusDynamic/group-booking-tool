@@ -4,7 +4,9 @@
 	import ExperimentNav from '$lib/components/ExperimentNav.svelte';
 	import Alert from '$lib/components/Alert.svelte';
 	import Card from '$lib/components/Card.svelte';
+	import FormField from '$lib/components/FormField.svelte';
 	import { resolve } from '$app/paths';
+	import { inputClass } from '$lib/styles';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	let exp = $derived(data.experiment);
@@ -79,54 +81,42 @@
 
 <h2 class="mt-10 text-lg font-semibold">New rule</h2>
 <form method="post" action="?/create" use:enhance class="mt-4 grid gap-4 sm:grid-cols-2">
-	<label class="block sm:col-span-2">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Label</span>
+	<FormField label="Label" error={form?.errors?.label} class="sm:col-span-2">
 		<input
 			name="label"
 			required
 			value={form?.values?.label ?? ''}
 			placeholder="Email participants instructions"
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
-		{#if form?.errors?.label}
-			<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.label}</p>
-		{/if}
-	</label>
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Minutes before session</span>
+	</FormField>
+	<FormField label="Minutes before session">
 		<input
 			type="number"
 			name="offsetMinutesBefore"
 			min="0"
 			required
 			value={form?.values?.offsetMinutesBefore ?? 1440}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
-	</label>
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Condition</span>
-		<select
-			name="condition"
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-		>
+	</FormField>
+	<FormField label="Condition">
+		<select name="condition" class={inputClass}>
 			<option value="always">always</option>
 			<option value="below_minimum">only if below minimum</option>
 			<option value="at_capacity">only if at capacity</option>
 		</select>
-	</label>
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-			>Event duration (minutes)</span
-		>
+	</FormField>
+	<FormField label="Event duration (minutes)">
 		<input
 			type="number"
 			name="durationMinutes"
 			min="1"
 			required
 			value={form?.values?.durationMinutes ?? 15}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
-	</label>
+	</FormField>
 	<div class="sm:col-span-2">
 		<button
 			type="submit"

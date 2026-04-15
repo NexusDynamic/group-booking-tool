@@ -4,7 +4,9 @@
 	import ExperimentNav from '$lib/components/ExperimentNav.svelte';
 	import Alert from '$lib/components/Alert.svelte';
 	import Card from '$lib/components/Card.svelte';
+	import FormField from '$lib/components/FormField.svelte';
 	import { resolve } from '$app/paths';
+	import { inputClass } from '$lib/styles';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -83,73 +85,55 @@
 {#if showNewForm}
 	<Card class="mt-6 p-4">
 		<form method="post" action="?/create" use:enhance class="grid gap-4 sm:grid-cols-2">
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Start (local)</span>
+			<FormField label="Start (local)" error={form?.errors?.startsAtLocal}>
 				<input
 					type="datetime-local"
 					name="startsAtLocal"
 					required
 					value={form?.values?.startsAtLocal ?? ''}
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+					class={inputClass}
 				/>
-				{#if form?.errors?.startsAtLocal}
-					<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.startsAtLocal}</p>
-				{/if}
-			</label>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Duration (minutes)</span>
+			</FormField>
+			<FormField label="Duration (minutes)">
 				<input
 					type="number"
 					name="durationMinutes"
 					min="1"
 					required
 					value={form?.values?.durationMinutes ?? exp.durationMinutes}
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+					class={inputClass}
 				/>
-			</label>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Max participants</span>
+			</FormField>
+			<FormField label="Max participants">
 				<input
 					type="number"
 					name="capacity"
 					min="1"
 					required
 					value={form?.values?.capacity ?? exp.maxParticipants}
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+					class={inputClass}
 				/>
-			</label>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Min participants</span>
+			</FormField>
+			<FormField label="Min participants">
 				<input
 					type="number"
 					name="minParticipants"
 					min="1"
 					required
 					value={form?.values?.minParticipants ?? exp.minParticipants}
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+					class={inputClass}
 				/>
-			</label>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Location</span>
-				<textarea
-					name="location"
-					rows="2"
-					placeholder="Room B-305"
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			</FormField>
+			<FormField label="Location">
+				<textarea name="location" rows="2" placeholder="Room B-305" class={inputClass}
 					>{form?.values?.location ?? exp.location}</textarea
 				>
-			</label>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-					>Notes for participants</span
-				>
-				<textarea
-					name="notes"
-					rows="2"
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			</FormField>
+			<FormField label="Notes for participants">
+				<textarea name="notes" rows="2" class={inputClass}
 					>{form?.values?.notes ?? exp.notes}</textarea
 				>
-			</label>
+			</FormField>
 			<div class="sm:col-span-2">
 				<button
 					type="submit"

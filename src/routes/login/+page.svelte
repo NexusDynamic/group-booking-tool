@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+	import Footer from '$lib/components/Footer.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
@@ -59,25 +60,5 @@
 			>.
 		</p>
 	</div>
-	<footer
-		class="fixed bottom-0 left-0 mt-12 mb-0 w-full pb-4 text-center text-sm text-gray-500 dark:text-gray-400"
-	>
-		<p>
-			&copy; {new Date().getFullYear()}
-			<a href="https://zeyus.com/" target="_blank" rel="noopener noreferrer">zeyus</a>. Licenced
-			under the
-			<a
-				class="underline"
-				href="https://github.com/NexusDynamic/group-booking-tool/blob/main/LICENSE"
-				target="_blank"
-				rel="noopener noreferrer">MIT License</a
-			>.
-			<a
-				class="underline"
-				href="https://github.com/NexusDynamic/group-booking-tool"
-				target="_blank"
-				rel="noopener noreferrer">Source code</a
-			>.
-		</p>
-	</footer>
+	<Footer fixed showPrivacyLink={false} />
 </div>

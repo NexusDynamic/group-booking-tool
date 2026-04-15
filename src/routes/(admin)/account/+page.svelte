@@ -2,6 +2,8 @@
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 	import Alert from '$lib/components/Alert.svelte';
+	import FormField from '$lib/components/FormField.svelte';
+	import { inputClass } from '$lib/styles';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
@@ -38,52 +40,34 @@
 	{/if}
 
 	<form method="post" action="?/changePassword" use:enhance class="mt-4 space-y-4">
-		<label class="block">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Current password</span>
+		<FormField label="Current password" error={form?.errors?.currentPassword}>
 			<input
 				type="password"
 				name="currentPassword"
 				required
 				autocomplete="current-password"
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				class={inputClass}
 			/>
-			{#if form?.errors?.currentPassword}
-				<span class="mt-1 block text-xs text-red-700 dark:text-red-400"
-					>{form.errors.currentPassword}</span
-				>
-			{/if}
-		</label>
-		<label class="block">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">New password</span>
+		</FormField>
+		<FormField label="New password" error={form?.errors?.newPassword}>
 			<input
 				type="password"
 				name="newPassword"
 				required
 				minlength="8"
 				autocomplete="new-password"
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				class={inputClass}
 			/>
-			{#if form?.errors?.newPassword}
-				<span class="mt-1 block text-xs text-red-700 dark:text-red-400"
-					>{form.errors.newPassword}</span
-				>
-			{/if}
-		</label>
-		<label class="block">
-			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Confirm new password</span>
+		</FormField>
+		<FormField label="Confirm new password" error={form?.errors?.confirmPassword}>
 			<input
 				type="password"
 				name="confirmPassword"
 				required
 				autocomplete="new-password"
-				class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+				class={inputClass}
 			/>
-			{#if form?.errors?.confirmPassword}
-				<span class="mt-1 block text-xs text-red-700 dark:text-red-400"
-					>{form.errors.confirmPassword}</span
-				>
-			{/if}
-		</label>
+		</FormField>
 		<button
 			type="submit"
 			class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"

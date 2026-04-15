@@ -3,7 +3,9 @@
 	import type { ActionData, PageData } from './$types';
 	import ExperimentNav from '$lib/components/ExperimentNav.svelte';
 	import Alert from '$lib/components/Alert.svelte';
+	import FormField from '$lib/components/FormField.svelte';
 	import { resolve } from '$app/paths';
+	import { inputClass } from '$lib/styles';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -50,134 +52,87 @@
 {/if}
 
 <form method="post" action="?/update" use:enhance class="mt-6 grid gap-4 sm:grid-cols-2">
-	<label class="block sm:col-span-2">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Name</span>
-		<input
-			name="name"
-			required
-			value={form?.values?.name ?? exp.name}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-		/>
-	</label>
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Contact name</span>
+	<FormField label="Name" class="sm:col-span-2">
+		<input name="name" required value={form?.values?.name ?? exp.name} class={inputClass} />
+	</FormField>
+	<FormField label="Contact name" error={form?.errors?.experimenterName}>
 		<input
 			name="experimenterName"
 			required
 			value={form?.values?.experimenterName ?? exp.experimenterName}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
-		{#if form?.errors?.experimenterName}
-			<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.experimenterName}</p>
-		{/if}
-	</label>
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Contact email</span>
+	</FormField>
+	<FormField label="Contact email" error={form?.errors?.experimenterEmail}>
 		<input
 			type="email"
 			name="experimenterEmail"
 			required
 			value={form?.values?.experimenterEmail ?? exp.experimenterEmail}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
-		{#if form?.errors?.experimenterEmail}
-			<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.experimenterEmail}</p>
-		{/if}
-	</label>
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Slug</span>
+	</FormField>
+	<FormField label="Slug" error={form?.errors?.slug}>
 		<input
 			name="slug"
 			required
 			value={form?.values?.slug ?? exp.slug}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class="{inputClass} font-mono text-sm"
 		/>
-		{#if form?.errors?.slug}
-			<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.slug}</p>
-		{/if}
-	</label>
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Duration (minutes)</span>
+	</FormField>
+	<FormField label="Duration (minutes)">
 		<input
 			type="number"
 			name="durationMinutes"
 			min="1"
 			required
 			value={form?.values?.durationMinutes ?? exp.durationMinutes}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
-	</label>
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Min participants</span>
+	</FormField>
+	<FormField label="Min participants">
 		<input
 			type="number"
 			name="minParticipants"
 			min="1"
 			required
 			value={form?.values?.minParticipants ?? exp.minParticipants}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
-	</label>
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Max participants</span>
+	</FormField>
+	<FormField label="Max participants">
 		<input
 			type="number"
 			name="maxParticipants"
 			min="1"
 			required
 			value={form?.values?.maxParticipants ?? exp.maxParticipants}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
-	</label>
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-			>Default Location for sessions</span
-		>
-		<textarea
-			name="location"
-			rows="3"
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+	</FormField>
+	<FormField label="Default Location for sessions">
+		<textarea name="location" rows="3" class={inputClass}
 			>{form?.values?.location ?? exp.location}</textarea
 		>
-	</label>
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-			>Default notes to show participants</span
-		>
-		<textarea
-			name="notes"
-			rows="3"
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-			>{form?.values?.notes ?? exp.notes}</textarea
-		>
-	</label>
-	<label class="block sm:col-span-2">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Description</span>
-		<textarea
-			name="description"
-			rows="4"
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+	</FormField>
+	<FormField label="Default notes to show participants">
+		<textarea name="notes" rows="3" class={inputClass}>{form?.values?.notes ?? exp.notes}</textarea>
+	</FormField>
+	<FormField label="Description" class="sm:col-span-2">
+		<textarea name="description" rows="4" class={inputClass}
 			>{form?.values?.description ?? exp.description}</textarea
 		>
-	</label>
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Inclusion criteria</span>
-		<textarea
-			name="inclusionCriteria"
-			rows="4"
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+	</FormField>
+	<FormField label="Inclusion criteria">
+		<textarea name="inclusionCriteria" rows="4" class={inputClass}
 			>{form?.values?.inclusionCriteria ?? exp.inclusionCriteria}</textarea
 		>
-	</label>
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Exclusion criteria</span>
-		<textarea
-			name="exclusionCriteria"
-			rows="4"
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+	</FormField>
+	<FormField label="Exclusion criteria">
+		<textarea name="exclusionCriteria" rows="4" class={inputClass}
 			>{form?.values?.exclusionCriteria ?? exp.exclusionCriteria}</textarea
 		>
-	</label>
+	</FormField>
 	<label class="flex items-center gap-2 sm:col-span-2">
 		<input
 			type="checkbox"
@@ -200,14 +155,13 @@
 		</p>
 	</div>
 
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Experiment end date</span>
+	<FormField label="Experiment end date" error={form?.errors?.endDate}>
 		<input
 			type="date"
 			name="endDate"
 			value={form?.values?.endDate ??
 				(exp.endDate ? new Date(exp.endDate).toISOString().slice(0, 10) : '')}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
 		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
 			Required for automated data retention. Participant data will be anonymised
@@ -223,13 +177,13 @@
 				Deletion on or after: <strong>{deletionDate.toISOString().slice(0, 10)}</strong>.
 			{/if}
 		</p>
-		{#if form?.errors?.endDate}
-			<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.endDate}</p>
-		{/if}
-	</label>
+	</FormField>
 
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Data retention (days)</span>
+	<FormField
+		label="Data retention (days)"
+		hint="Leave blank to use the server default ({data.defaultRetentionDays} days)."
+		error={form?.errors?.dataRetentionDays}
+	>
 		<input
 			type="number"
 			name="dataRetentionDays"
@@ -237,43 +191,32 @@
 			max="3650"
 			placeholder={String(data.defaultRetentionDays)}
 			value={form?.values?.dataRetentionDays ?? exp.dataRetentionDays ?? ''}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
-		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-			Leave blank to use the server default ({data.defaultRetentionDays} days).
-		</p>
-		{#if form?.errors?.dataRetentionDays}
-			<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.dataRetentionDays}</p>
-		{/if}
-	</label>
+	</FormField>
 
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Privacy notice URL</span>
+	<FormField label="Privacy notice URL" hint="Optional link to your full privacy policy.">
 		<input
 			type="url"
 			name="privacyNoticeUrl"
 			placeholder="https://example.com/privacy"
 			value={form?.values?.privacyNoticeUrl ?? exp.privacyNoticeUrl}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
-		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-			Optional link to your full privacy policy.
-		</p>
-	</label>
+	</FormField>
 
-	<label class="block sm:col-span-2">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Privacy notice text</span>
+	<FormField
+		label="Privacy notice text"
+		hint="Leave blank to show an auto-generated notice based on the retention window."
+		class="sm:col-span-2"
+	>
 		<textarea
 			name="privacyNoticeText"
 			rows="3"
 			placeholder="Your name and email are used only to manage your booking…"
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-			>{form?.values?.privacyNoticeText ?? exp.privacyNoticeText}</textarea
+			class={inputClass}>{form?.values?.privacyNoticeText ?? exp.privacyNoticeText}</textarea
 		>
-		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-			Leave blank to show an auto-generated notice based on the retention window.
-		</p>
-	</label>
+	</FormField>
 
 	<div class="flex items-center justify-between sm:col-span-2">
 		<button

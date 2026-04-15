@@ -55,7 +55,17 @@ export const actions: Actions = {
 			location,
 			notes
 		});
-		return { saved: true };
+		return {
+			saved: true,
+			values: {
+				startsAtLocal,
+				durationMinutes: String(durationMinutes),
+				capacity: String(capacity),
+				minParticipants: String(minParticipants),
+				location,
+				notes
+			}
+		};
 	},
 
 	cancel: async ({ params }) => {

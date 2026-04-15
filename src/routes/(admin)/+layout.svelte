@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import type { LayoutData } from './$types';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+	import Footer from '$lib/components/Footer.svelte';
 	import { resolve } from '$app/paths';
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
@@ -55,24 +56,5 @@
 	<main class="mx-auto max-w-6xl px-6 py-8">
 		{@render children()}
 	</main>
-	<footer class="mt-12 mb-0 pb-4 text-center text-sm text-gray-500 dark:text-gray-400">
-		<p>
-			&copy; {new Date().getFullYear()}
-			<a href="https://zeyus.com/" target="_blank" rel="noopener noreferrer">zeyus</a>. Licenced
-			under the
-			<a
-				class="underline"
-				href="https://github.com/NexusDynamic/group-booking-tool/blob/main/LICENSE"
-				target="_blank"
-				rel="noopener noreferrer">MIT License</a
-			>.
-			<a
-				class="underline"
-				href="https://github.com/NexusDynamic/group-booking-tool"
-				target="_blank"
-				rel="noopener noreferrer">Source code</a
-			>.
-			<a class="underline" href="/privacy">Privacy Policy</a>.
-		</p>
-	</footer>
+	<Footer />
 </div>

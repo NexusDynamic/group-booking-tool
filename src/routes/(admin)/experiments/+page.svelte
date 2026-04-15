@@ -2,6 +2,8 @@
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 	import { resolve } from '$app/paths';
+	import FormField from '$lib/components/FormField.svelte';
+	import { inputClass } from '$lib/styles';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -29,133 +31,90 @@
 	>
 		<h2 class="text-lg font-medium">New experiment</h2>
 		<form method="post" action="?/create" use:enhance class="mt-4 grid gap-4 sm:grid-cols-2">
-			<label class="block sm:col-span-2">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Name</span>
-				<input
-					name="name"
-					required
-					value={form?.values?.name ?? ''}
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-				/>
-				{#if form?.errors?.name}
-					<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.name}</p>
-				{/if}
-			</label>
-			<label class="block sm:col-span-2">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-					>Display name for experimenter</span
-				>
+			<FormField label="Name" error={form?.errors?.name} class="sm:col-span-2">
+				<input name="name" required value={form?.values?.name ?? ''} class={inputClass} />
+			</FormField>
+			<FormField
+				label="Display name for experimenter"
+				error={form?.errors?.experimenterName}
+				class="sm:col-span-2"
+			>
 				<input
 					name="experimenterName"
 					required
 					value={form?.values?.experimenterName ?? ''}
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+					class={inputClass}
 				/>
-				{#if form?.errors?.experimenterName}
-					<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.experimenterName}</p>
-				{/if}
-			</label>
-			<label class="block sm:col-span-2">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-					>Contact email for experimenter</span
-				>
+			</FormField>
+			<FormField
+				label="Contact email for experimenter"
+				error={form?.errors?.experimenterEmail}
+				class="sm:col-span-2"
+			>
 				<input
 					type="email"
 					name="experimenterEmail"
 					required
 					value={form?.values?.experimenterEmail ?? ''}
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+					class={inputClass}
 				/>
-				{#if form?.errors?.experimenterEmail}
-					<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.experimenterEmail}</p>
-				{/if}
-			</label>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Slug (public URL)</span>
+			</FormField>
+			<FormField label="Slug (public URL)" error={form?.errors?.slug}>
 				<input
 					name="slug"
 					placeholder="auto-generated from name"
 					value={form?.values?.slug ?? ''}
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+					class="{inputClass} font-mono text-sm"
 				/>
-				{#if form?.errors?.slug}
-					<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.slug}</p>
-				{/if}
-			</label>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Duration (minutes)</span>
+			</FormField>
+			<FormField label="Duration (minutes)">
 				<input
 					type="number"
 					name="durationMinutes"
 					min="1"
 					required
 					value={form?.values?.durationMinutes ?? '60'}
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+					class={inputClass}
 				/>
-			</label>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-					>Default Location for sessions</span
-				>
-				<input
-					name="location"
-					value={form?.values?.location ?? ''}
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-				/>
-			</label>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-					>Min participants per session</span
-				>
+			</FormField>
+			<FormField label="Default Location for sessions">
+				<input name="location" value={form?.values?.location ?? ''} class={inputClass} />
+			</FormField>
+			<FormField label="Min participants per session">
 				<input
 					type="number"
 					name="minParticipants"
 					min="1"
 					required
 					value={form?.values?.minParticipants ?? '1'}
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+					class={inputClass}
 				/>
-			</label>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-					>Max participants per session</span
-				>
+			</FormField>
+			<FormField label="Max participants per session">
 				<input
 					type="number"
 					name="maxParticipants"
 					min="1"
 					required
 					value={form?.values?.maxParticipants ?? '4'}
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+					class={inputClass}
 				/>
-			</label>
-			<label class="block sm:col-span-2">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Description</span>
-				<textarea
-					name="description"
-					rows="3"
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			</FormField>
+			<FormField label="Description" class="sm:col-span-2">
+				<textarea name="description" rows="3" class={inputClass}
 					>{form?.values?.description ?? ''}</textarea
 				>
-			</label>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Inclusion criteria</span>
-				<textarea
-					name="inclusionCriteria"
-					rows="3"
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			</FormField>
+			<FormField label="Inclusion criteria">
+				<textarea name="inclusionCriteria" rows="3" class={inputClass}
 					>{form?.values?.inclusionCriteria ?? ''}</textarea
 				>
-			</label>
-			<label class="block">
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Exclusion criteria</span>
-				<textarea
-					name="exclusionCriteria"
-					rows="3"
-					class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			</FormField>
+			<FormField label="Exclusion criteria">
+				<textarea name="exclusionCriteria" rows="3" class={inputClass}
 					>{form?.values?.exclusionCriteria ?? ''}</textarea
 				>
-			</label>
+			</FormField>
 			<label class="flex items-center gap-2 sm:col-span-2">
 				<input
 					type="checkbox"

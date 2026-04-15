@@ -4,7 +4,9 @@
 	import ExperimentNav from '$lib/components/ExperimentNav.svelte';
 	import Alert from '$lib/components/Alert.svelte';
 	import Card from '$lib/components/Card.svelte';
+	import FormField from '$lib/components/FormField.svelte';
 	import { resolve } from '$app/paths';
+	import { inputClass } from '$lib/styles';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -123,139 +125,99 @@
 
 <h2 class="mt-10 text-lg font-semibold">New template</h2>
 <form method="post" action="?/create" use:enhance class="mt-4 grid gap-4 sm:grid-cols-2">
-	<label class="block sm:col-span-2">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Label</span>
+	<FormField label="Label" error={form?.errors?.label} class="sm:col-span-2">
 		<input
 			name="label"
 			required
 			value={form?.values?.label ?? ''}
 			placeholder="Mon 09:00 block"
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
-		{#if form?.errors?.label}
-			<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.label}</p>
-		{/if}
-	</label>
+	</FormField>
 
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Weekdays (BYDAY)</span>
+	<FormField
+		label="Weekdays (BYDAY)"
+		error={form?.errors?.byDay}
+		hint="Comma-separated: MO, TU, WE, TH, FR, SA, SU"
+	>
 		<input
 			name="byDay"
 			required
 			value={form?.values?.byDay ?? 'MO'}
 			placeholder="MO,WE,FR"
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm uppercase dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class="{inputClass} font-mono text-sm uppercase"
 		/>
-		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-			Comma-separated: MO, TU, WE, TH, FR, SA, SU
-		</p>
-		{#if form?.errors?.byDay}
-			<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.byDay}</p>
-		{/if}
-	</label>
+	</FormField>
 
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Session time</span>
+	<FormField
+		label="Session time"
+		error={form?.errors?.timeLocal}
+		hint="Wall-clock start time for each session"
+	>
 		<input
 			type="time"
 			name="timeLocal"
 			required
 			value={form?.values?.timeLocal ?? ''}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
-		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-			Wall-clock start time for each session
-		</p>
-		{#if form?.errors?.timeLocal}
-			<p class="mt-1 text-sm text-red-600 dark:text-red-400">{form.errors.timeLocal}</p>
-		{/if}
-	</label>
+	</FormField>
 
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Duration (minutes)</span>
+	<FormField label="Duration (minutes)">
 		<input
 			type="number"
 			name="durationMinutes"
 			min="1"
 			required
 			value={form?.values?.durationMinutes ?? exp.durationMinutes}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
-	</label>
+	</FormField>
 
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Capacity</span>
+	<FormField label="Capacity">
 		<input
 			type="number"
 			name="capacity"
 			min="1"
 			required
 			value={form?.values?.capacity ?? exp.maxParticipants}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
-	</label>
+	</FormField>
 
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Min participants</span>
+	<FormField label="Min participants">
 		<input
 			type="number"
 			name="minParticipants"
 			min="1"
 			required
 			value={form?.values?.minParticipants ?? exp.minParticipants}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
-	</label>
+	</FormField>
 
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-			>First session date (optional)</span
-		>
+	<FormField label="First session date (optional)" hint="Leave blank to generate from today">
 		<input
 			type="date"
 			name="windowStart"
 			value={form?.values?.windowStart ?? ''}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+			class={inputClass}
 		/>
-		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave blank to generate from today</p>
-	</label>
+	</FormField>
 
-	<label class="block">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-			>Last session date (optional)</span
-		>
-		<input
-			type="date"
-			name="windowEnd"
-			value={form?.values?.windowEnd ?? ''}
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-		/>
-		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-			Leave blank to generate 1 year of sessions
-		</p>
-	</label>
-	<label class="block sm:col-span-2">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-			>Default Session Location (optional)</span
-		>
-		<textarea
-			name="location"
-			rows="3"
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+	<FormField label="Last session date (optional)" hint="Leave blank to generate 1 year of sessions">
+		<input type="date" name="windowEnd" value={form?.values?.windowEnd ?? ''} class={inputClass} />
+	</FormField>
+
+	<FormField label="Default Session Location (optional)" class="sm:col-span-2">
+		<textarea name="location" rows="3" class={inputClass}
 			>{form?.values?.location ?? exp.location}</textarea
 		>
-	</label>
-	<label class="block sm:col-span-2">
-		<span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-			>Default Session Notes for participants (optional)</span
-		>
-		<textarea
-			name="notes"
-			rows="3"
-			class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-			>{form?.values?.notes ?? exp.notes}</textarea
-		>
-	</label>
+	</FormField>
+
+	<FormField label="Default Session Notes for participants (optional)" class="sm:col-span-2">
+		<textarea name="notes" rows="3" class={inputClass}>{form?.values?.notes ?? exp.notes}</textarea>
+	</FormField>
 
 	<div class="sm:col-span-2">
 		<button
