@@ -28,20 +28,20 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const parsed = parseForm(experimentFormSchema, formData);
 		if (!parsed.ok) return parsed.failure;
+		const values: Record<string, string> = {};
+		for (const [k, v] of formData.entries()) {
+			if (typeof v === 'string') values[k] = v;
+		}
 		try {
 			await updateExperiment(params.id, parsed.data);
 		} catch (err) {
 			if (err instanceof SlugInUseError) {
 				const errors: Record<string, string> = { slug: err.message };
-				const values: Record<string, string> = {};
-				for (const [k, v] of formData.entries()) {
-					if (typeof v === 'string') values[k] = v;
-				}
 				return fail(400, { errors, values });
 			}
 			throw err;
 		}
-		return { saved: true };
+		return { saved: true, values };
 	},
 
 	publish: async ({ params }) => {

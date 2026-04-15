@@ -4,7 +4,7 @@
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { form }: { form: ActionData } = $props();
 </script>
 
 <svelte:head>
@@ -22,7 +22,6 @@
 	>
 		<h1 class="mb-6 text-2xl font-semibold dark:text-white">Researcher sign-in</h1>
 		<form method="post" use:enhance class="space-y-4">
-			<input type="hidden" name="next" value={data.next} />
 			<label class="block">
 				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Email</span>
 				<input

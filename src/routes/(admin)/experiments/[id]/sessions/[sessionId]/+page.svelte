@@ -149,7 +149,12 @@
 
 <section class="mt-10">
 	<h2 class="text-lg font-semibold">Edit session</h2>
-	<form method="post" action="?/update" use:enhance class="mt-4 grid gap-4 sm:grid-cols-2">
+	<form
+		method="post"
+		action="?/update"
+		use:enhance={() => async ({ update }) => update({ reset: false })}
+		class="mt-4 grid gap-4 sm:grid-cols-2"
+	>
 		<FormField label="Start (your local time)">
 			<input
 				type="datetime-local"

@@ -6,11 +6,8 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals, url }) => {
 	if (locals.user) {
-		const n = url.searchParams.get('next');
-		const next = n && n.startsWith('/') && !n.startsWith('//') ? n : resolve('/dashboard');
-		throw redirect(303, next);
+		throw redirect(303, resolve('/dashboard'));
 	}
-	return { next: url.searchParams.get('next') || '/dashboard' };
 };
 
 export const actions: Actions = {
@@ -34,9 +31,7 @@ export const actions: Actions = {
 			}
 			return fail(500, { email, error: 'Unexpected error during sign-in.' });
 		}
-		const n = formData.get('next')?.toString();
-		const next = n && n.startsWith('/') && !n.startsWith('//') ? n : resolve('/dashboard');
 
-		throw redirect(303, next);
+		throw redirect(303, resolve('/dashboard'));
 	}
 };

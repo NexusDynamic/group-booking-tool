@@ -36,7 +36,7 @@
 						{item.label}
 					</a>
 				{/each}
-				<form method="post" action="/logout" class="ml-2">
+				<form method="post" action="{resolve('/logout')}" class="ml-2">
 					<button
 						type="submit"
 						class="rounded-md px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
