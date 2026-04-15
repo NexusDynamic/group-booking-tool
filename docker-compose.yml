@@ -1,6 +1,11 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        # BASE_PATH is baked in at build time. Change it here (or in .env) and
+        # rebuild with `docker compose build` for the new prefix to take effect.
+        BASE_PATH: '${BASE_PATH:-}'
     restart: unless-stopped
     volumes:
       # SQLite database file — back this directory up regularly.
@@ -11,7 +16,7 @@ services:
       DATABASE_URL: /data/booking.db
       PORT: '${APP_PORT:-3000}'
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO /dev/null http://localhost:${PORT:-3000}/login']
+      test: ['CMD-SHELL', 'wget -qO /dev/null http://localhost:${PORT:-3000}${BASE_PATH:-}/login']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -27,7 +32,10 @@ services:
   # volume as the app service. Waits for the app to be healthy first so the
   # schema is always applied before the first sweep.
   anonymize:
-    build: .
+    build:
+      context: .
+      args:
+        BASE_PATH: '${BASE_PATH:-}'
     restart: unless-stopped
     volumes:
       - ./data:/data
