@@ -152,7 +152,9 @@
 	<form
 		method="post"
 		action="?/update"
-		use:enhance={() => async ({ update }) => update({ reset: false })}
+		use:enhance={() =>
+			async ({ update }) =>
+				update({ reset: false })}
 		class="mt-4 grid gap-4 sm:grid-cols-2"
 	>
 		<FormField label="Start (your local time)">
