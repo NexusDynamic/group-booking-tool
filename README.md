@@ -26,6 +26,13 @@ pnpm seed:admin        # creates the single admin user, then locks signup
 pnpm dev
 ```
 
+**note:** `BASE_PATH` does not automatically apply when you run the dev server, if you want to specify
+a subdirectory for local testing, you can run the `pnpm dev` command with the environment variable set:
+
+```sh
+BASE_PATH=/booking pnpm dev
+```
+
 Visit `https://localhost:5173/login` and sign in with the admin credentials.
 
 ## Building for production

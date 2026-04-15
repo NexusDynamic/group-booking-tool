@@ -4,6 +4,7 @@ import { experimentFormSchema } from '$lib/schemas/experiment';
 import { slugify } from '$lib/server/slug';
 import { parseForm } from '$lib/server/validate';
 import type { Actions, PageServerLoad } from './$types';
+import { resolve } from '$app/paths';
 
 export const load: PageServerLoad = async () => {
 	return { experiments: await listExperiments() };
@@ -22,7 +23,7 @@ export const actions: Actions = {
 
 		try {
 			const exp = await createExperiment(parsed.data);
-			throw redirect(303, `/experiments/${exp.id}`);
+			throw redirect(303, resolve(`/experiments/${exp.id}`));
 		} catch (err) {
 			if (err instanceof SlugInUseError) {
 				const errors: Record<string, string> = { slug: err.message };

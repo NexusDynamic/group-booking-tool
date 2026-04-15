@@ -1,4 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
+import { resolve } from '$app/paths';
 import {
 	deleteExperiment,
 	ExperimentHasBookingsError,
@@ -62,6 +63,6 @@ export const actions: Actions = {
 			}
 			throw err;
 		}
-		throw redirect(303, '/experiments');
+		throw redirect(303, resolve('/experiments'));
 	}
 };

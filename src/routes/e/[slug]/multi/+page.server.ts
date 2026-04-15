@@ -1,4 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
+import { resolve } from '$app/paths';
 import { buildPrivacyNotice, getExperimentBySlug } from '$lib/server/experiments';
 import { sessionsWithCounts } from '$lib/server/sessions';
 import { sessionListPreferenceFormSchema } from '$lib/schemas/preference';
@@ -91,6 +92,6 @@ export const actions: Actions = {
 			snapshotFields
 		});
 
-		throw redirect(303, `/e/${experiment.slug}/preference/${rawToken}`);
+		throw redirect(303, resolve(`/e/${experiment.slug}/preference/${rawToken}`));
 	}
 };

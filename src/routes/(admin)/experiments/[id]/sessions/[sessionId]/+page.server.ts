@@ -1,4 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
+import { resolve } from '$app/paths';
 import { getExperimentById } from '$lib/server/experiments';
 import { cancelSession, deleteSession, getSessionById, updateSession } from '$lib/server/sessions';
 import { listBookingsForSession, setBookingStatus } from '$lib/server/bookings';
@@ -75,7 +76,7 @@ export const actions: Actions = {
 
 	delete: async ({ params }) => {
 		await deleteSession(params.sessionId);
-		throw redirect(303, `/experiments/${params.id}/sessions`);
+		throw redirect(303, resolve(`/experiments/${params.id}/sessions`));
 	},
 
 	markAttended: async ({ request }) => {

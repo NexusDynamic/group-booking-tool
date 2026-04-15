@@ -1,4 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
+import { resolve } from '$app/paths';
 import { buildPrivacyNotice, getExperimentBySlug } from '$lib/server/experiments';
 import { parseRequiredFields } from '$lib/schemas/experiment';
 import { sessionsWithCounts } from '$lib/server/sessions';
@@ -122,7 +123,7 @@ export const actions: Actions = {
 				snapshotEmail: parsedData.email,
 				snapshotFields
 			});
-			throw redirect(303, `/e/${experiment.slug}/booked/${rawToken}`);
+			throw redirect(303, resolve(`/e/${experiment.slug}/booked/${rawToken}`));
 		} catch (err) {
 			if (err instanceof SessionFullError) {
 				return fail(409, {
