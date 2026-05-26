@@ -5,11 +5,9 @@ import type { Actions, PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ params, url }) => {
 	const experiment = await getExperimentById(params.id);
 	if (!experiment) throw error(404, 'Experiment not found');
-	const origin = url.origin;
+
 	return {
-		experiment,
-		publicUrl: `${origin}/ics/experiment/${experiment.publicIcsToken}.ics`,
-		researcherUrl: `${origin}/ics/researcher/${experiment.researcherIcsToken}.ics`
+		experiment
 	};
 };
 

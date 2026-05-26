@@ -149,12 +149,14 @@
 			{#each data.experiments as exp (exp.id)}
 				<li>
 					<a
-						href={resolve(`/experiments/${exp.id}`)}
+						href={resolve('/(admin)/experiments/[id]', { id: exp.id })}
 						class="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 hover:border-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-gray-500"
 					>
 						<div>
 							<div class="font-medium">{exp.name}</div>
-							<div class="font-mono text-xs text-gray-500 dark:text-gray-400">/e/{exp.slug}</div>
+							<div class="font-mono text-xs text-gray-500 dark:text-gray-400">
+								{resolve('/e/[slug]', { slug: exp.slug })}
+							</div>
 						</div>
 						<div class="flex items-center gap-2">
 							{#if exp.isPublished}

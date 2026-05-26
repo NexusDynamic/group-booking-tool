@@ -3,9 +3,9 @@ services:
     build:
       context: .
       args:
-        # BASE_PATH is baked in at build time. Change it here (or in .env) and
+        # BASE_URL is baked in at build time. Change it here (or in .env) and
         # rebuild with `docker compose build` for the new prefix to take effect.
-        BASE_PATH: '${BASE_PATH:-}'
+        BASE_URL: '${BASE_URL:-}'
     restart: unless-stopped
     volumes:
       # SQLite database file — back this directory up regularly.
@@ -16,7 +16,7 @@ services:
       DATABASE_URL: /data/booking.db
       PORT: '${APP_PORT:-3000}'
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO /dev/null http://localhost:${PORT:-3000}${BASE_PATH:-}/login']
+      test: ['CMD-SHELL', 'wget -qO /dev/null http://localhost:${PORT:-3000}${BASE_URL:-}/login']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -35,7 +35,7 @@ services:
     build:
       context: .
       args:
-        BASE_PATH: '${BASE_PATH:-}'
+        BASE_URL: '${BASE_URL:-}'
     restart: unless-stopped
     volumes:
       - ./data:/data

@@ -21,16 +21,17 @@ a way to publish session slots and register participant signups. One SQLite file
 pnpm install
 cp .env.example .env
 # edit .env: set ORIGIN, BETTER_AUTH_SECRET, CLINIC_TZ, ADMIN_EMAIL, ADMIN_PASSWORD
+
 pnpm db:push           # apply the schema to the SQLite file in DATABASE_URL
 pnpm seed:admin        # creates the single admin user, then locks signup
 pnpm dev
 ```
 
-**note:** `BASE_PATH` does not automatically apply when you run the dev server, if you want to specify
+**note:** `BASE_URL` does not automatically apply when you run the dev server, if you want to specify
 a subdirectory for local testing, you can run the `pnpm dev` command with the environment variable set:
 
 ```sh
-BASE_PATH=/booking pnpm dev
+BASE_URL=/booking pnpm dev
 ```
 
 Visit `https://localhost:5173/login` and sign in with the admin credentials.

@@ -11,10 +11,10 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-# BASE_PATH is baked into the SvelteKit build (kit.paths.base).
-# Pass --build-arg BASE_PATH=/your/prefix when building, or via docker-compose.
-ARG BASE_PATH=""
-ENV BASE_PATH=$BASE_PATH
+# BASE_URL is baked into the SvelteKit build (kit.paths.base).
+# Pass --build-arg BASE_URL=/your/prefix when building, or via docker-compose.
+ARG BASE_URL=""
+ENV BASE_URL=$BASE_URL
 
 # Vite/SvelteKit build does not execute drizzle.config.ts, but $env/dynamic/private
 # is satisfied at runtime by adapter-node. Provide a placeholder so any
@@ -50,8 +50,8 @@ ENV NODE_ENV=production
 # Default port — overridden at runtime by PORT in docker-compose.yml (APP_PORT).
 ENV PORT=3000
 
-# Carry BASE_PATH into the runtime image so the healthcheck can reference it.
-ARG BASE_PATH=""
-ENV BASE_PATH=$BASE_PATH
+# Carry BASE_URL into the runtime image so the healthcheck can reference it.
+ARG BASE_URL=""
+ENV BASE_URL=$BASE_URL
 
 ENTRYPOINT ["./docker-entrypoint.sh"]

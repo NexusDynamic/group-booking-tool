@@ -1,9 +1,10 @@
 import adapter from '@sveltejs/adapter-node';
-
-// BASE_PATH is a build-time setting — set it before running `pnpm build` (or
+import { config as dotenvConfig } from 'dotenv';
+dotenvConfig();
+// BASE_URL is a build-time setting — set it before running `pnpm build` (or
 // pass it as a Docker build arg).  Must start with "/" and must NOT end with
 // "/" (e.g. "/booking").  Leave empty to serve from the root.
-const base = process.env.BASE_PATH ?? '';
+const base = process.env.BASE_URL ?? '';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {

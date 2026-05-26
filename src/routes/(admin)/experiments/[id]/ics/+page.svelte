@@ -11,8 +11,14 @@
 
 	let copied = $state<'public' | 'researcher' | null>(null);
 
+	const publicUrl: (token: string) => string = (token: string) =>
+		resolve('/ics/experiment/[token].ics', { token });
+	const researcherUrl: (token: string) => string = (token: string) =>
+		resolve('/ics/researcher/[token].ics', { token });
+
 	async function copy(which: 'public' | 'researcher') {
-		const url = which === 'public' ? data.publicUrl : data.researcherUrl;
+		const url =
+			which === 'public' ? publicUrl(exp.publicIcsToken) : researcherUrl(exp.researcherIcsToken);
 		await navigator.clipboard.writeText(url);
 		copied = which;
 		setTimeout(() => (copied = null), 2000);
@@ -24,7 +30,7 @@
 </svelte:head>
 
 <a
-	href={resolve(`/experiments/${exp.id}`)}
+	href={resolve('/(admin)/experiments/[id]', { id: exp.id })}
 	class="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
 	>← {exp.name}</a
 >
@@ -53,7 +59,7 @@
 		<div class="mt-3 flex gap-2">
 			<input
 				readonly
-				value={data.publicUrl}
+				value={publicUrl(exp.publicIcsToken)}
 				class="flex-1 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 font-mono text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
 			/>
 			<button
@@ -83,7 +89,7 @@
 		<div class="mt-3 flex gap-2">
 			<input
 				readonly
-				value={data.researcherUrl}
+				value={researcherUrl(exp.researcherIcsToken)}
 				class="flex-1 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 font-mono text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
 			/>
 			<button
