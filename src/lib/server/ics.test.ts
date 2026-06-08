@@ -109,8 +109,8 @@ describe('buildExperimentFeed', () => {
 
 		const ics = await buildExperimentFeed('exp-1', { host: 'test.example' });
 		expect(ics).toContain('BEGIN:VCALENDAR');
-		expect(ics).toContain('[PENDING-CONFIRMATION] Reaction Time Study (2/4)');
-		expect(ics).toContain('[PENDING-CONFIRMATION] Reaction Time Study (0/4)');
+		expect(ics).toContain('[BOOKED] Reaction Time Study (2/4)');
+		expect(ics).toContain('[BOOKED] Reaction Time Study (0/4)');
 		expect(ics).toContain('UID:sess-1@test.example');
 		expect(ics).toContain('UID:sess-2@test.example');
 	});

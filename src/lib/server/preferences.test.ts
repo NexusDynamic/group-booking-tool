@@ -48,9 +48,9 @@ function seedSession(id: string, startsAtIso: string, capacity = 4) {
 
 describe('preferences repo', () => {
 	it('stores and retrieves a session-list preference', async () => {
-		seedSession('sess-A', '2026-06-01T07:00:00Z');
-		seedSession('sess-B', '2026-06-03T07:00:00Z');
-		seedSession('sess-C', '2026-06-05T07:00:00Z');
+		seedSession('sess-A', '2032-06-01T07:00:00Z');
+		seedSession('sess-B', '2032-06-03T07:00:00Z');
+		seedSession('sess-C', '2032-06-05T07:00:00Z');
 
 		const { preference } = await createSessionListPreference({
 			experimentId: 'exp-1',
@@ -67,22 +67,22 @@ describe('preferences repo', () => {
 	});
 
 	it('recurring preference matches only sessions whose time fits the rrule', async () => {
-		// Monday 2026-06-01 09:00 local Europe/Copenhagen = 07:00 UTC (CEST)
-		// Monday 2026-06-08 09:00 local = 07:00 UTC
-		// Wednesday 2026-06-03 09:00 local = 07:00 UTC (should NOT match MO rule)
-		seedSession('sess-mon1', '2026-06-01T07:00:00Z');
-		seedSession('sess-wed', '2026-06-03T07:00:00Z');
-		seedSession('sess-mon2', '2026-06-08T07:00:00Z');
+		// Monday 2032-06-01 09:00 local Europe/Copenhagen = 07:00 UTC (CEST)
+		// Monday 2032-06-08 09:00 local = 07:00 UTC
+		// Wednesday 2032-06-03 09:00 local = 07:00 UTC (should NOT match MO rule)
+		seedSession('sess-mon1', '2032-06-01T07:00:00Z');
+		seedSession('sess-wed', '2032-06-03T07:00:00Z');
+		seedSession('sess-mon2', '2032-06-08T07:00:00Z');
 
 		const { preference } = await createRecurringPreference({
 			experimentId: 'exp-1',
 			name: 'A',
 			email: 'a@b.test',
 			rrule: 'FREQ=WEEKLY;BYDAY=MO',
-			dtstartLocal: '2026-06-01T09:00',
+			dtstartLocal: '2032-06-01T07:00',
 			durationMinutes: 60,
-			windowStart: new Date('2026-06-01T00:00:00Z'),
-			windowEnd: new Date('2026-06-30T00:00:00Z'),
+			windowStart: new Date('2032-06-01T00:00:00Z'),
+			windowEnd: new Date('2032-06-30T00:00:00Z'),
 			notes: ''
 		});
 
@@ -92,8 +92,8 @@ describe('preferences repo', () => {
 	});
 
 	it('assignPreferenceToSessions creates bookings and flips status to assigned', async () => {
-		seedSession('sess-A', '2026-06-01T07:00:00Z', 4);
-		seedSession('sess-B', '2026-06-08T07:00:00Z', 4);
+		seedSession('sess-A', '2032-06-01T07:00:00Z', 4);
+		seedSession('sess-B', '2032-06-08T07:00:00Z', 4);
 
 		const { preference } = await createSessionListPreference({
 			experimentId: 'exp-1',

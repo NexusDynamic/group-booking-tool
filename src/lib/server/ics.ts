@@ -78,7 +78,7 @@ function buildCalendarEvent(
 function sessionStatusToIcsStatus(status: string): 'CONFIRMED' | 'CANCELLED' | 'TENTATIVE' {
 	switch (status) {
 		case 'scheduled':
-			return 'TENTATIVE';
+			return 'CONFIRMED';
 		case 'cancelled':
 			return 'CANCELLED';
 		default:
@@ -89,7 +89,7 @@ function sessionStatusToIcsStatus(status: string): 'CONFIRMED' | 'CANCELLED' | '
 function sessionStatusForEventName(status: string): string {
 	switch (status) {
 		case 'scheduled':
-			return '[PENDING-CONFIRMATION] ';
+			return '[BOOKED] ';
 		case 'cancelled':
 			return '[CANCELLED] ';
 		case 'completed':
