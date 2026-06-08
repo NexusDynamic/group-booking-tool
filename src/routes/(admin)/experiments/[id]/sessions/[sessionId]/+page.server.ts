@@ -3,8 +3,24 @@ import { resolve } from '$app/paths';
 import { getExperimentById } from '$lib/server/experiments';
 import { cancelSession, deleteSession, getSessionById, updateSession } from '$lib/server/sessions';
 import { listBookingsForSession, setBookingStatus } from '$lib/server/bookings';
-import { formatInTz, localToUtc } from '$lib/server/time';
+import { CLINIC_TZ, formatInTz, localToUtc } from '$lib/server/time';
 import type { Actions, PageServerLoad } from './$types';
+
+/** Format a UTC Date as "YYYY-MM-DDTHH:mm" in CLINIC_TZ for datetime-local inputs. */
+function toClinicTzInput(d: Date): string {
+	const dtf = new Intl.DateTimeFormat('en-CA', {
+		timeZone: CLINIC_TZ,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
+		hour12: false
+	});
+	const parts = Object.fromEntries(dtf.formatToParts(d).map((p) => [p.type, p.value]));
+	const h = +parts.hour === 24 ? '00' : parts.hour;
+	return `${parts.year}-${parts.month}-${parts.day}T${h}:${parts.minute}`;
+}
 
 export const load: PageServerLoad = async ({ params }) => {
 	const experiment = await getExperimentById(params.id);
@@ -25,10 +41,12 @@ export const load: PageServerLoad = async ({ params }) => {
 		session: {
 			...session,
 			startsAtLabel: formatInTz(session.startsAt),
-			endsAtLabel: formatInTz(session.endsAt)
+			endsAtLabel: formatInTz(session.endsAt),
+			startsAtInput: toClinicTzInput(session.startsAt)
 		},
 		sessionCalendarUrl: `/ics/session/${session.publicIcsToken}.ics`,
-		bookings
+		bookings,
+		clinicTz: CLINIC_TZ
 	};
 };
 

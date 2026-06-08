@@ -12,15 +12,6 @@
 	let exp = $derived(data.experiment);
 	let session = $derived(data.session);
 
-	// Produce a "YYYY-MM-DDTHH:mm" value for the datetime-local input. This uses
-	// the UTC instant directly, not the clinic-tz wall-clock — the admin will
-	// edit it in their own browser timezone. Good enough for v1; we'll revisit
-	// if it becomes confusing.
-	function toLocalInput(d: Date) {
-		const iso = new Date(d).toISOString();
-		return iso.slice(0, 16);
-	}
-
 	let durationMinutes = $derived(
 		Math.round((new Date(session.endsAt).getTime() - new Date(session.startsAt).getTime()) / 60000)
 	);
@@ -157,14 +148,17 @@
 				update({ reset: false })}
 		class="mt-4 grid gap-4 sm:grid-cols-2"
 	>
-		<FormField label="Start (your local time)">
+		<FormField label="Start time">
 			<input
 				type="datetime-local"
 				name="startsAtLocal"
 				required
-				value={form?.values?.startsAtLocal ?? toLocalInput(session.startsAt)}
+				value={form?.values?.startsAtLocal ?? session.startsAtInput}
 				class={inputClass}
 			/>
+			<span class="mt-1 text-xs text-gray-500 dark:text-gray-400"
+				>Times in {data.clinicTz}</span
+			>
 		</FormField>
 		<FormField label="Duration (minutes)">
 			<input
