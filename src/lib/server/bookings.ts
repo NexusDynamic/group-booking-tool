@@ -148,6 +148,10 @@ export async function findBookingByToken(rawToken: string): Promise<Booking | un
 /**
  * Cancel a booking from the public self-manage page. Idempotent: cancelling
  * an already-cancelled booking is a no-op.
+ *
+ * If cancelling drops the confirmed count below the session's minParticipants
+ * threshold, the session is reverted from 'confirmed' back to 'scheduled' so
+ * it re-appears on the participant booking pages.
  */
 export async function cancelBookingByToken(rawToken: string): Promise<Booking> {
 	const booking = await findBookingByToken(rawToken);
@@ -156,12 +160,35 @@ export async function cancelBookingByToken(rawToken: string): Promise<Booking> {
 	if (booking.status === 'attended' || booking.status === 'no_show') {
 		throw new BookingStateError(`Cannot cancel — booking is ${booking.status}`);
 	}
-	const [updated] = await db
-		.update(bookings)
-		.set({ status: 'cancelled', updatedAt: new Date() })
-		.where(eq(bookings.id, booking.id))
-		.returning();
-	return updated;
+
+	return db.transaction((tx) => {
+		const [updated] = tx
+			.update(bookings)
+			.set({ status: 'cancelled', updatedAt: new Date() })
+			.where(eq(bookings.id, booking.id))
+			.returning()
+			.all();
+
+		// Revert session to 'scheduled' if confirmed count drops below minimum.
+		const sessionRows = tx.select().from(sessions).where(eq(sessions.id, booking.sessionId)).all();
+		const session = sessionRows[0];
+		if (session && session.status === 'confirmed') {
+			const countRows = tx
+				.select({ n: sql<number>`count(*)` })
+				.from(bookings)
+				.where(and(eq(bookings.sessionId, booking.sessionId), eq(bookings.status, 'confirmed')))
+				.all();
+			const remaining = Number(countRows[0]?.n ?? 0);
+			if (remaining < session.minParticipants) {
+				tx.update(sessions)
+					.set({ status: 'scheduled', updatedAt: new Date() })
+					.where(eq(sessions.id, session.id))
+					.run();
+			}
+		}
+
+		return updated;
+	});
 }
 
 /** Lookup bookings for a given session in newest-first order. */

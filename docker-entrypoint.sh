@@ -14,6 +14,11 @@ fi
 echo "[entrypoint] Applying database schema..."
 node_modules/.bin/drizzle-kit push --config drizzle.config.ts --force
 
+# Fix any sessions incorrectly left in 'confirmed' status after participant
+# cancellations (idempotent — no-op once data is clean).
+echo "[entrypoint] Fixing session statuses..."
+node_modules/.bin/tsx src/lib/server/fix-session-statuses.ts
+
 # Seed the initial admin account when credentials are provided.
 # The seed script is a no-op once any user row exists, so it is safe to leave
 # the variables set on subsequent restarts.

@@ -36,7 +36,7 @@ function seedExperiment(id = 'exp-1') {
 		.run(id, `slug-${id}`, 'Exp', 60, `pub-${id}`, `res-${id}`);
 }
 
-function seedSession(id: string, experimentId: string, capacity: number) {
+function seedSession(id: string, experimentId: string, capacity: number, minParticipants = 1) {
 	client
 		.prepare(
 			'INSERT INTO sessions (id, experiment_id, starts_at, ends_at, capacity, min_participants, public_ics_token) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -47,9 +47,16 @@ function seedSession(id: string, experimentId: string, capacity: number) {
 			Date.now() + 86_400_000,
 			Date.now() + 86_400_000 + 3_600_000,
 			capacity,
-			1,
+			minParticipants,
 			`pub-${id}`
 		);
+}
+
+function sessionStatus(id: string): string {
+	const row = client.prepare('SELECT status FROM sessions WHERE id = ?').get(id) as {
+		status: string;
+	};
+	return row.status;
 }
 
 describe('bookings repo', () => {
@@ -161,6 +168,62 @@ describe('bookings repo', () => {
 		expect(first.status).toBe('cancelled');
 		const second = await cancelBookingByToken(rawToken);
 		expect(second.status).toBe('cancelled');
+	});
+});
+
+describe('session status revert on cancellation', () => {
+	async function book(sessionId: string, email: string) {
+		const p = await upsertParticipant({ email, displayName: email });
+		return createBooking({
+			sessionId,
+			participantId: p.id,
+			snapshotName: email,
+			snapshotEmail: email,
+			snapshotFields: {}
+		});
+	}
+
+	it('reverts session to scheduled when cancellation drops confirmed count below minParticipants', async () => {
+		seedExperiment();
+		seedSession('sess-1', 'exp-1', 5, 2); // min=2, capacity=5
+
+		// First booking — session stays 'scheduled' (1 < 2)
+		await book('sess-1', 'a@b.test');
+		expect(sessionStatus('sess-1')).toBe('scheduled');
+
+		// Second booking — session becomes 'confirmed' (2 >= 2)
+		const { rawToken } = await book('sess-1', 'b@b.test');
+		expect(sessionStatus('sess-1')).toBe('confirmed');
+
+		// Cancel one — drops to 1 < 2 → must revert to 'scheduled'
+		await cancelBookingByToken(rawToken);
+		expect(sessionStatus('sess-1')).toBe('scheduled');
+	});
+
+	it('keeps session confirmed when cancellation still leaves count at or above minParticipants', async () => {
+		seedExperiment();
+		seedSession('sess-1', 'exp-1', 5, 2); // min=2, capacity=5
+
+		await book('sess-1', 'a@b.test');
+		await book('sess-1', 'b@b.test'); // → confirmed
+		const { rawToken } = await book('sess-1', 'c@b.test'); // 3 confirmed
+
+		await cancelBookingByToken(rawToken); // drops to 2 — still >= min
+		expect(sessionStatus('sess-1')).toBe('confirmed');
+	});
+
+	it('reverted session accepts new bookings again', async () => {
+		seedExperiment();
+		seedSession('sess-1', 'exp-1', 2, 2); // min=2, capacity=2 (full once both book)
+
+		await book('sess-1', 'a@b.test');
+		const { rawToken } = await book('sess-1', 'b@b.test'); // → confirmed + full
+
+		await cancelBookingByToken(rawToken); // → scheduled, 1 seat free
+		expect(sessionStatus('sess-1')).toBe('scheduled');
+
+		// New participant can book the freed seat.
+		await expect(book('sess-1', 'c@b.test')).resolves.toBeTruthy();
 	});
 });
 
