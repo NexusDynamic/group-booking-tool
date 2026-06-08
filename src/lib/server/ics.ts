@@ -228,8 +228,8 @@ function buildPublicEvent(
 			end: toLocalDateArray(s.endsAt),
 			startInputType: 'local',
 			endInputType: 'local',
-			startTimezone: CLINIC_TZ,
-			endTimezone: CLINIC_TZ,
+			startOutputType: 'local',
+			endOutputType: 'local',
 			status: sessionStatusToIcsStatus(s.status)
 		},
 		s.id,
@@ -264,8 +264,8 @@ function buildResearcherEvent(
 			end: toLocalDateArray(s.endsAt),
 			startInputType: 'local',
 			endInputType: 'local',
-			startTimezone: CLINIC_TZ,
-			endTimezone: CLINIC_TZ,
+			startOutputType: 'local',
+			endOutputType: 'local',
 			status: sessionStatusToIcsStatus(s.status)
 		},
 		s.id,
@@ -290,8 +290,8 @@ function buildParticipantSessionEvent(
 			end: toLocalDateArray(s.endsAt),
 			startInputType: 'local',
 			endInputType: 'local',
-			startTimezone: CLINIC_TZ,
-			endTimezone: CLINIC_TZ,
+			startOutputType: 'local',
+			endOutputType: 'local',
 			status: sessionStatusToIcsStatus(s.status)
 		},
 		s.id,
@@ -331,8 +331,8 @@ function buildReminderEvent(
 			end: toLocalDateArray(reminderEnd),
 			startInputType: 'local',
 			endInputType: 'local',
-			startTimezone: CLINIC_TZ,
-			endTimezone: CLINIC_TZ,
+			startOutputType: 'local',
+			endOutputType: 'local',
 			status: 'CONFIRMED'
 		},
 		s.id,

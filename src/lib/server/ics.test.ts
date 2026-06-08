@@ -11,14 +11,14 @@ import * as schema from './db/schema';
 import { applySchema, clearTables } from './db/test-helpers';
 
 vi.mock('$env/dynamic/private', () => ({
-	env: { DATABASE_URL: ':memory:', CLINIC_TZ: 'Europe/Copenhagen' }
+	env: { DATABASE_URL: ':memory:', CLINIC_TZ: 'Europe/Copenhagen', CLINIC_LOCALE: 'da-DK' }
 }));
 
 const client = new Database(':memory:');
 const memDb = drizzle(client, { schema });
 vi.mock('./db', () => ({ db: memDb }));
 
-const { buildExperimentFeed, buildResearcherFeed } = await import('./ics');
+const { buildExperimentFeed, buildResearcherFeed, toLocalDateArray } = await import('./ics');
 
 beforeAll(async () => applySchema(client));
 afterAll(() => client.close());
@@ -167,5 +167,46 @@ describe('buildResearcherFeed', () => {
 		const ics = await buildResearcherFeed('exp-1', { host: 'test.example' });
 		expect(ics).toContain('UID:sess-full-reminder-rule-1@test.example');
 		expect(ics).not.toContain('UID:sess-empty-reminder-rule-1@test.example');
+	});
+});
+
+describe('toLocalDateArray', () => {
+	it('extracts wall-clock components in CLINIC_TZ for a summer UTC instant', () => {
+		// 2026-06-15 07:00 UTC = 09:00 Copenhagen summer (CEST, UTC+2)
+		const d = new Date('2026-06-15T07:00:00Z');
+		const arr = toLocalDateArray(d);
+		expect(arr).toEqual([2026, 6, 15, 9, 0]);
+	});
+
+	it('extracts wall-clock components in CLINIC_TZ for a winter UTC instant', () => {
+		// 2026-01-15 08:00 UTC = 09:00 Copenhagen winter (CET, UTC+1)
+		const d = new Date('2026-01-15T08:00:00Z');
+		const arr = toLocalDateArray(d);
+		expect(arr).toEqual([2026, 1, 15, 9, 0]);
+	});
+
+	it('ICS output uses floating local time — no Z suffix, correct wall-clock hour', async () => {
+		seedExperiment();
+		// 07:00 UTC = 09:00 Copenhagen summer (September is still CEST)
+		const startsAt = new Date('2026-09-15T07:00:00Z');
+		seedSession('sess-tz', startsAt);
+
+		const ics = await buildExperimentFeed('exp-1', { host: 'test.example' });
+		// Floating time: no Z suffix on any DTSTART line
+		expect(ics).not.toMatch(/DTSTART:[^\r\n]*Z/);
+		// Wall-clock hour in Copenhagen (T090000, not T070000)
+		expect(ics).toContain('DTSTART:20260915T090000');
+	});
+
+	it('reminder event also uses floating local time', async () => {
+		seedExperiment();
+		// 07:00 UTC = 09:00 Copenhagen summer; reminder 60 min before = 08:00 Copenhagen
+		const startsAt = new Date('2026-09-15T07:00:00Z');
+		seedSession('sess-tz', startsAt);
+		seedRule('rule-1', 'always', 60, 15, 'Send instructions');
+
+		const ics = await buildResearcherFeed('exp-1', { host: 'test.example' });
+		expect(ics).not.toMatch(/DTSTART:[^\r\n]*Z/);
+		expect(ics).toContain('DTSTART:20260915T080000');
 	});
 });

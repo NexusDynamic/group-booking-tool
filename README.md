@@ -144,8 +144,9 @@ in your `.env` file.
 ## Testing
 
 ```sh
+pnpm exec playwright install
 pnpm test                      # unit + browser tests
-pnpm test:unit -- --run        # unit only
+pnpm test:unit                 # unit only
 pnpm check                     # svelte-check + typescript
 pnpm lint
 ```
