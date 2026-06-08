@@ -85,7 +85,7 @@
 {#if showNewForm}
 	<Card class="mt-6 p-4">
 		<form method="post" action="?/create" use:enhance class="grid gap-4 sm:grid-cols-2">
-			<FormField label="Start (local)" error={form?.errors?.startsAtLocal}>
+			<FormField label="Start time" error={form?.errors?.startsAtLocal}>
 				<input
 					type="datetime-local"
 					name="startsAtLocal"
@@ -93,6 +93,9 @@
 					value={form?.values?.startsAtLocal ?? ''}
 					class={inputClass}
 				/>
+				<span class="mt-1 text-xs text-gray-500 dark:text-gray-400"
+					>Times in {data.clinicTz}</span
+				>
 			</FormField>
 			<FormField label="Duration (minutes)">
 				<input

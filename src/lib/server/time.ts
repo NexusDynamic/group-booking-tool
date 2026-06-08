@@ -8,6 +8,12 @@ import { env } from '$env/dynamic/private';
 export const CLINIC_TZ = env.CLINIC_TZ || 'Europe/Copenhagen';
 
 /**
+ * Locale used for all wall-clock display (formatInTz). Accepts any BCP 47
+ * locale string. Defaults to da-DK (Danish).
+ */
+export const CLINIC_LOCALE = env.CLINIC_LOCALE || 'da-DK';
+
+/**
  * Convert an ISO-like local datetime (e.g. "2026-06-01T09:00") interpreted in
  * a given IANA timezone to a UTC Date. Uses Intl to resolve the offset — no
  * external dep required.
@@ -69,5 +75,5 @@ export function formatInTz(
 	}
 ): string {
 	const date = instant instanceof Date ? instant : new Date(instant);
-	return new Intl.DateTimeFormat('en-GB', { ...options, timeZone: tz }).format(date);
+	return new Intl.DateTimeFormat(CLINIC_LOCALE, { ...options, timeZone: tz }).format(date);
 }

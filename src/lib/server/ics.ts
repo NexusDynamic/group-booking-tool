@@ -2,6 +2,7 @@ import { createEvents, type EventAttributes, type DateArray } from 'ics';
 import { and, asc, eq, gte, inArray } from 'drizzle-orm';
 import { db } from './db';
 import { bookings, experiments, reminderRules, sessions } from './db/schema';
+import { CLINIC_TZ } from './time';
 
 /**
  * ICS feed generation.
@@ -55,8 +56,6 @@ function buildCalendarEvent(
 	adminDisplayName: string | undefined
 ): EventAttributes {
 	return {
-		startInputType: 'utc',
-		endInputType: 'utc',
 		...eventAttrs,
 		organizer: {
 			name: adminDisplayName ?? 'Experiment Organizer',
@@ -189,14 +188,28 @@ async function loadFeedData(
 	return { experiment: exp, sessions: scheduled };
 }
 
-function toDateArray(d: Date): DateArray {
-	// ics expects [y, m, d, h, mi] in UTC when we pass startInputType 'utc'.
+export function toLocalDateArray(d: Date): DateArray {
+	// Extract wall-clock components in CLINIC_TZ so the ics library emits
+	// DTSTART;TZID=<zone>:YYYYMMDDTHHmmss — unambiguous for all calendar clients.
+	const dtf = new Intl.DateTimeFormat('en-US', {
+		timeZone: CLINIC_TZ,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
+		hour12: false
+	});
+	const parts = Object.fromEntries(dtf.formatToParts(d).map((p) => [p.type, p.value])) as Record<
+		string,
+		string
+	>;
 	return [
-		d.getUTCFullYear(),
-		d.getUTCMonth() + 1,
-		d.getUTCDate(),
-		d.getUTCHours(),
-		d.getUTCMinutes()
+		+parts.year,
+		+parts.month,
+		+parts.day,
+		+parts.hour === 24 ? 0 : +parts.hour,
+		+parts.minute
 	];
 }
 
@@ -211,8 +224,12 @@ function buildPublicEvent(
 			title: `${sessionStatusForEventName(s.status)}${exp.name} (${s.confirmedCount}/${s.capacity})`,
 			description: exp.description,
 			location: s.location || undefined,
-			start: toDateArray(s.startsAt),
-			end: toDateArray(s.endsAt),
+			start: toLocalDateArray(s.startsAt),
+			end: toLocalDateArray(s.endsAt),
+			startInputType: 'local',
+			endInputType: 'local',
+			startTimezone: CLINIC_TZ,
+			endTimezone: CLINIC_TZ,
 			status: sessionStatusToIcsStatus(s.status)
 		},
 		s.id,
@@ -243,8 +260,12 @@ function buildResearcherEvent(
 			title: `${sessionStatusForEventName(s.status)}${exp.name} (${s.confirmedCount}/${s.capacity})`,
 			description: description,
 			location: s.location || undefined,
-			start: toDateArray(s.startsAt),
-			end: toDateArray(s.endsAt),
+			start: toLocalDateArray(s.startsAt),
+			end: toLocalDateArray(s.endsAt),
+			startInputType: 'local',
+			endInputType: 'local',
+			startTimezone: CLINIC_TZ,
+			endTimezone: CLINIC_TZ,
 			status: sessionStatusToIcsStatus(s.status)
 		},
 		s.id,
@@ -265,8 +286,12 @@ function buildParticipantSessionEvent(
 			title: `${sessionStatusForEventName(s.status)}${exp.name}`,
 			description: exp.description,
 			location: s.location || undefined,
-			start: toDateArray(s.startsAt),
-			end: toDateArray(s.endsAt),
+			start: toLocalDateArray(s.startsAt),
+			end: toLocalDateArray(s.endsAt),
+			startInputType: 'local',
+			endInputType: 'local',
+			startTimezone: CLINIC_TZ,
+			endTimezone: CLINIC_TZ,
 			status: sessionStatusToIcsStatus(s.status)
 		},
 		s.id,
@@ -302,10 +327,12 @@ function buildReminderEvent(
 			uid: `${s.id}-reminder-${rule.id}@${host}`,
 			title: `${rule.label} — ${exp.name} (${s.confirmedCount}/${s.capacity})`,
 			description: `Reminder for session ${s.id}. Current booking count: ${s.confirmedCount}/${s.capacity}. Minimum: ${s.minParticipants}.`,
-			start: toDateArray(reminderStart),
-			end: toDateArray(reminderEnd),
-			startInputType: 'utc',
-			endInputType: 'utc',
+			start: toLocalDateArray(reminderStart),
+			end: toLocalDateArray(reminderEnd),
+			startInputType: 'local',
+			endInputType: 'local',
+			startTimezone: CLINIC_TZ,
+			endTimezone: CLINIC_TZ,
 			status: 'CONFIRMED'
 		},
 		s.id,

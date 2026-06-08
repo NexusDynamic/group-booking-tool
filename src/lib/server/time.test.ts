@@ -1,5 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { formatInTz, localToUtc, tzOffsetMs } from './time';
+import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('$env/dynamic/private', () => ({
+	env: { CLINIC_TZ: 'Europe/Copenhagen', CLINIC_LOCALE: 'da-DK' }
+}));
+
+import { CLINIC_LOCALE, CLINIC_TZ, formatInTz, localToUtc, tzOffsetMs } from './time';
 
 describe('time', () => {
 	it('localToUtc: converts winter (CET, UTC+1) wall clock', () => {
@@ -39,10 +44,29 @@ describe('time', () => {
 		expect(tzOffsetMs(summerInstant, 'Europe/Copenhagen')).toBe(7_200_000);
 	});
 
-	it('formatInTz: renders a UTC instant in the target tz', () => {
-		// 08:00 UTC → 10:00 Copenhagen in summer
+	it('CLINIC_TZ defaults to Europe/Copenhagen', () => {
+		expect(CLINIC_TZ).toBe('Europe/Copenhagen');
+	});
+
+	it('CLINIC_LOCALE defaults to da-DK', () => {
+		expect(CLINIC_LOCALE).toBe('da-DK');
+	});
+
+	it('formatInTz: renders a UTC instant in the clinic timezone using CLINIC_LOCALE', () => {
+		// 08:00 UTC → 10:00 Copenhagen summer (CEST, UTC+2)
+		// da-DK uses dot as time separator: "10.00"
 		const instant = Date.UTC(2026, 5, 15, 8, 0, 0);
 		const formatted = formatInTz(instant, 'Europe/Copenhagen', { timeStyle: 'short' });
+		expect(formatted).toContain('10.00');
+	});
+
+	it('formatInTz: explicit locale override still shows correct hour', () => {
+		// Passing en-GB directly bypasses CLINIC_LOCALE — hour should still be 10
+		const instant = Date.UTC(2026, 5, 15, 8, 0, 0);
+		const formatted = new Intl.DateTimeFormat('en-GB', {
+			timeZone: 'Europe/Copenhagen',
+			timeStyle: 'short'
+		}).format(new Date(instant));
 		expect(formatted).toContain('10:00');
 	});
 });

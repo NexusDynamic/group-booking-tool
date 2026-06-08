@@ -8,7 +8,7 @@ import {
 } from '$lib/server/sessions';
 import { sessionFormSchema } from '$lib/schemas/session';
 import { parseForm } from '$lib/server/validate';
-import { formatInTz, localToUtc } from '$lib/server/time';
+import { CLINIC_TZ, formatInTz, localToUtc } from '$lib/server/time';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, url }) => {
@@ -23,7 +23,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		startsAtLabel: formatInTz(s.startsAt),
 		endsAtLabel: formatInTz(s.endsAt, undefined, { timeStyle: 'short' })
 	}));
-	return { experiment, sessions, upcomingOnly };
+	return { experiment, sessions, upcomingOnly, clinicTz: CLINIC_TZ };
 };
 
 export const actions: Actions = {

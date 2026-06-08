@@ -161,6 +161,7 @@
 			value={form?.values?.timeLocal ?? ''}
 			class={inputClass}
 		/>
+		<span class="mt-1 text-xs text-gray-500 dark:text-gray-400">Times in {data.clinicTz}</span>
 	</FormField>
 
 	<FormField label="Duration (minutes)">

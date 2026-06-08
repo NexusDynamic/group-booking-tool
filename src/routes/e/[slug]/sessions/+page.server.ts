@@ -11,7 +11,7 @@ import {
 	upsertParticipant
 } from '$lib/server/bookings';
 import { hasPriorAttendance } from '$lib/server/exclusions';
-import { formatInTz } from '$lib/server/time';
+import { CLINIC_TZ, formatInTz } from '$lib/server/time';
 import { env } from '$env/dynamic/private';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -40,7 +40,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		},
 		sessions,
 		requiredFields: parseRequiredFields(experiment.requiredFields),
-		privacyNotice: buildPrivacyNotice(experiment, Number(env.DATA_RETENTION_DAYS ?? 90))
+		privacyNotice: buildPrivacyNotice(experiment, Number(env.DATA_RETENTION_DAYS ?? 90)),
+		clinicTz: CLINIC_TZ
 	};
 };
 

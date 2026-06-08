@@ -43,7 +43,9 @@
 		<form method="post" action="?/book" use:enhance class="mt-6 space-y-6">
 			<fieldset>
 				<legend class="text-sm font-medium text-gray-700 dark:text-gray-300"
-					>Available sessions</legend
+					>Available sessions <span class="font-normal text-gray-400 dark:text-gray-500"
+						>({data.clinicTz})</span
+					></legend
 				>
 				<div class="mt-2 space-y-2">
 					{#each data.sessions as s (s.id)}

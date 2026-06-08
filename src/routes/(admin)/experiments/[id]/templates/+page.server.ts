@@ -25,7 +25,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			: null,
 		windowEndLabel: t.windowEnd ? formatInTz(t.windowEnd, undefined, { dateStyle: 'medium' }) : null
 	}));
-	return { experiment, templates };
+	return { experiment, templates, clinicTz: CLINIC_TZ };
 };
 
 /** Midnight on the given local date = start of window (inclusive). */
