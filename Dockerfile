@@ -4,6 +4,10 @@ FROM node:22-alpine AS builder
 RUN npm install -g corepack@latest
 RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
+# Native addon build tools — required when better-sqlite3 has no prebuilt
+# binary for the current Node version on Alpine (musl libc).
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
