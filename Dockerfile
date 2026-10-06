@@ -1,8 +1,8 @@
 # ---------- build stage ----------
 FROM node:22-alpine AS builder
 
-RUN npm install -g corepack@latest
-RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
+# pnpm's version comes from the `packageManager` field in package.json.
+RUN npm install -g corepack@latest && corepack enable
 
 # Native addon build tools — required when better-sqlite3 has no prebuilt
 # binary for the current Node version on Alpine (musl libc).

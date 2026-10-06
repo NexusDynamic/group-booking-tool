@@ -2,6 +2,7 @@ import { createEvents, type EventAttributes, type DateArray } from 'ics';
 import { and, asc, eq, gte, inArray } from 'drizzle-orm';
 import { db } from './db';
 import { bookings, experiments, reminderRules, sessions } from './db/schema';
+import { isOpenStatus } from './session-status';
 import { CLINIC_TZ } from './time';
 
 /**
@@ -46,6 +47,19 @@ interface ParticipantInSession {
 	participantEmail: string;
 	participantName: string | undefined;
 	participantFormValues: Record<string, string>;
+}
+
+/** Tolerant parse of a booking's `snapshot_fields` JSON blob. */
+function parseFormValues(raw: string): Record<string, string> {
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+			return parsed as Record<string, string>;
+		}
+	} catch {
+		// fall through
+	}
+	return {};
 }
 
 function buildCalendarEvent(
@@ -120,9 +134,7 @@ async function loadFeedData(
 		.where(and(eq(sessions.experimentId, experimentId), gte(sessions.startsAt, now)))
 		.orderBy(asc(sessions.startsAt));
 
-	const filtered = sessionRows.filter(
-		(r) => (r.status === 'scheduled' || r.status === 'confirmed') && r.startsAt <= cutoff
-	);
+	const filtered = sessionRows.filter((r) => isOpenStatus(r.status) && r.startsAt <= cutoff);
 
 	// Count confirmed bookings per session in one follow-up query, then map
 	// into the feed shape. Cleaner than a correlated sub-query via drizzle's
@@ -143,12 +155,13 @@ async function loadFeedData(
 			for (const b of bookingRows) {
 				if (b.status === 'confirmed') {
 					countsBySession.set(b.sessionId, (countsBySession.get(b.sessionId) ?? 0) + 1);
-					if (b.snapshotEmail) {
+					// Anonymised bookings still count, but carry no details to list.
+					if (b.snapshotEmail && !b.anonymisedAt) {
 						const participantInfo = participantInfoBySession.get(b.sessionId) ?? [];
 						participantInfo.push({
 							participantEmail: b.snapshotEmail,
 							participantName: b.snapshotName,
-							participantFormValues: JSON.parse(b.snapshotFields)
+							participantFormValues: parseFormValues(b.snapshotFields)
 						});
 						participantInfoBySession.set(b.sessionId, participantInfo);
 					}
@@ -403,7 +416,7 @@ export async function buildSessionFeed(sessionId: string, opts: IcsOpts = {}): P
 	const experiment = expRows[0];
 
 	const events: EventAttributes[] = [];
-	if (session.status === 'scheduled' || session.status === 'confirmed') {
+	if (isOpenStatus(session.status)) {
 		events.push(buildParticipantSessionEvent(experiment, { ...session, confirmedCount: 0 }, host));
 	}
 

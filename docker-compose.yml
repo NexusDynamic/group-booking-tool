@@ -16,6 +16,9 @@ services:
       # Override DATABASE_URL so the file lives in the mounted volume.
       DATABASE_URL: /data/booking.db
       PORT: '${APP_PORT:-3000}'
+      # The app port is bound to loopback, so requests arrive via a reverse
+      # proxy. Set TRUSTED_PROXY=cloudflare in .env when behind Cloudflare.
+      TRUSTED_PROXY: '${TRUSTED_PROXY:-proxy}'
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO /dev/null http://localhost:${PORT:-3000}${BASE_URL:-}/login']
       interval: 30s

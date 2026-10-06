@@ -8,6 +8,7 @@ import {
 	suggestMatchingSessions
 } from '#lib/server/preferences.js';
 import { formatInTz } from '#lib/server/time.js';
+import { formId } from '#lib/server/validate.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -47,9 +48,9 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 export const actions: Actions = {
-	assign: async ({ request }) => {
+	assign: async ({ request, params }) => {
 		const formData = await request.formData();
-		const preferenceId = String(formData.get('preferenceId') ?? '');
+		const preferenceId = formId(formData, 'preferenceId');
 		const sessionIds = formData
 			.getAll('sessionIds')
 			.filter((v) => typeof v === 'string') as string[];
@@ -57,7 +58,12 @@ export const actions: Actions = {
 			return fail(400, { error: 'Pick at least one session to assign.' });
 		}
 		const pref = await getPreferenceById(preferenceId);
-		if (!pref) return fail(404, { error: 'Preference not found' });
+		if (!pref || pref.experimentId !== params.id) {
+			return fail(404, { error: 'Preference not found' });
+		}
+		if (pref.status !== 'pending') {
+			return fail(409, { error: `This preference is already ${pref.status}.` });
+		}
 		const { created, errors } = await assignPreferenceToSessions(preferenceId, sessionIds);
 		if (errors.length > 0) {
 			return fail(409, {
@@ -67,11 +73,10 @@ export const actions: Actions = {
 		return { assigned: true, created };
 	},
 
-	decline: async ({ request }) => {
-		const formData = await request.formData();
-		const preferenceId = String(formData.get('preferenceId') ?? '');
+	decline: async ({ request, params }) => {
+		const preferenceId = formId(await request.formData(), 'preferenceId');
 		if (!preferenceId) return fail(400, { error: 'Missing preference id' });
-		await declinePreference(preferenceId);
+		await declinePreference(preferenceId, params.id);
 		return { declined: true };
 	}
 };

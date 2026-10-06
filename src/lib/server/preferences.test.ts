@@ -61,6 +61,7 @@ describe('preferences repo', () => {
 			notes: 'note'
 		});
 		expect(preference.kind).toBe('session_list');
+		expect(preference.notes).toBe('note');
 		expect(JSON.parse(preference.preferredSessionIds)).toEqual(['sess-A', 'sess-C']);
 
 		const matches = await suggestMatchingSessions(preference);
@@ -117,5 +118,46 @@ describe('preferences repo', () => {
 			n: number;
 		};
 		expect(bookingCount.n).toBe(2);
+	});
+
+	it('suggests sessions that met their minimum but still have seats', async () => {
+		seedSession('sess-A', '2032-06-01T07:00:00Z');
+		client.prepare("UPDATE sessions SET status = 'confirmed' WHERE id = 'sess-A'").run();
+
+		const { preference } = await createSessionListPreference({
+			experimentId: 'exp-1',
+			name: 'A',
+			email: 'a@b.test',
+			sessionIds: ['sess-A'],
+			notes: ''
+		});
+		const matches = await suggestMatchingSessions(preference);
+		expect(matches.map((m) => m.id)).toEqual(['sess-A']);
+	});
+
+	it('assignPreferenceToSessions refuses sessions of another experiment', async () => {
+		client
+			.prepare(
+				'INSERT INTO experiments (id, slug, name, duration_minutes, public_ics_token, researcher_ics_token) VALUES (?, ?, ?, ?, ?, ?)'
+			)
+			.run('exp-2', 'exp-2', 'Other', 60, 'pub2', 'res2');
+		const starts = new Date('2032-06-01T07:00:00Z').getTime();
+		client
+			.prepare(
+				'INSERT INTO sessions (id, experiment_id, starts_at, ends_at, capacity, min_participants, public_ics_token) VALUES (?, ?, ?, ?, ?, ?, ?)'
+			)
+			.run('sess-other', 'exp-2', starts, starts + 3_600_000, 4, 1, 'pub-other');
+
+		const { preference } = await createSessionListPreference({
+			experimentId: 'exp-1',
+			name: 'A',
+			email: 'a@b.test',
+			sessionIds: ['sess-other'],
+			notes: ''
+		});
+		const { created, errors } = await assignPreferenceToSessions(preference.id, ['sess-other']);
+		expect(created).toBe(0);
+		expect(errors).toHaveLength(1);
+		expect((await getPreferenceById(preference.id))?.status).toBe('pending');
 	});
 });

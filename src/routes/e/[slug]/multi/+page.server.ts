@@ -1,33 +1,26 @@
-import { error, fail, redirect } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import { resolve } from '$app/paths';
-import { buildPrivacyNotice, getExperimentBySlug } from '#lib/server/experiments.js';
-import { sessionsWithCounts } from '#lib/server/sessions.js';
+import { buildPrivacyNotice } from '#lib/server/experiments.js';
 import { sessionListPreferenceFormSchema } from '#lib/schemas/preference.js';
-import { bookingSchemaFor } from '#lib/schemas/booking.js';
 import { parseRequiredFields } from '#lib/schemas/experiment.js';
 import { createSessionListPreference } from '#lib/server/preferences.js';
+import {
+	listOpenSessions,
+	parseParticipantSubmission,
+	requirePublishedExperiment
+} from '#lib/server/public-form.js';
 import { parseForm } from '#lib/server/validate.js';
-import { formatInTz } from '#lib/server/time.js';
 import { DATA_RETENTION_DAYS } from '$app/env/private';
 import type { Actions, PageServerLoad } from './$types';
 
+/** Upper bound on how many candidate sessions one preference may list. */
+const MAX_CANDIDATE_SESSIONS = 50;
+
 export const load: PageServerLoad = async ({ params }) => {
-	const experiment = await getExperimentBySlug(params.slug);
-	if (!experiment || !experiment.isPublished) throw error(404, 'Experiment not found');
-	const raw = await sessionsWithCounts(experiment.id, { upcomingOnly: true });
-	const sessions = raw
-		.filter((s) => s.status === 'scheduled')
-		.map((s) => ({
-			id: s.id,
-			startsAtLabel: formatInTz(s.startsAt),
-			endsAtLabel: formatInTz(s.endsAt, undefined, { timeStyle: 'short' }),
-			confirmedCount: s.confirmedCount,
-			capacity: s.capacity,
-			isFull: s.confirmedCount >= s.capacity
-		}));
+	const experiment = await requirePublishedExperiment(params.slug);
 	return {
 		experiment: { id: experiment.id, slug: experiment.slug, name: experiment.name },
-		sessions,
+		sessions: await listOpenSessions(experiment.id),
 		requiredFields: parseRequiredFields(experiment.requiredFields),
 		privacyNotice: buildPrivacyNotice(experiment, DATA_RETENTION_DAYS)
 	};
@@ -35,8 +28,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 export const actions: Actions = {
 	submit: async ({ request, params }) => {
-		const experiment = await getExperimentBySlug(params.slug);
-		if (!experiment || !experiment.isPublished) throw error(404, 'Experiment not found');
+		const experiment = await requirePublishedExperiment(params.slug);
 
 		const formData = await request.formData();
 		// Collect all `sessionIds` values (repeated checkbox name) and fold
@@ -44,52 +36,35 @@ export const actions: Actions = {
 		const ids = formData.getAll('sessionIds').filter((v) => typeof v === 'string') as string[];
 		formData.set('sessionIds', ids.join(','));
 
-		const requiredFields = parseRequiredFields(experiment.requiredFields);
-
-		// Collect form values once; parse standard fields then custom fields.
-		const values: Record<string, string> = {};
-		for (const [k, v] of formData.entries()) {
-			if (typeof v === 'string') values[k] = v;
-		}
+		const submission = parseParticipantSubmission(experiment, formData);
+		if (!submission.ok) return submission.failure;
 
 		const parsed = parseForm(sessionListPreferenceFormSchema, formData);
 		if (!parsed.ok) return parsed.failure;
-		if (parsed.data.honeypot) return fail(400, { error: 'Submission rejected.' });
 
-		// Privacy notice acknowledgement — required.
-		if (values.consent !== 'on') {
-			const errors: Record<string, string> = {
-				consent: 'You must acknowledge the privacy notice to continue.'
-			};
-			return fail(400, { errors, values });
-		}
-
-		// Validate custom fields using the same dynamic schema as the direct booking form.
-		const extraSchema = bookingSchemaFor(requiredFields);
-		const extraResult = extraSchema.safeParse(values);
-		if (!extraResult.success) {
-			const errors: Record<string, string> = {};
-			for (const issue of extraResult.error.issues) {
-				const path = issue.path.join('.') || '_';
-				if (!errors[path]) errors[path] = issue.message;
-			}
-			return fail(400, { errors, values });
-		}
-
-		const snapshotFields: Record<string, unknown> = {};
-		for (const f of requiredFields) {
-			const key = `field_${f.key}`;
-			if (key in extraResult.data)
-				snapshotFields[f.key] = (extraResult.data as Record<string, unknown>)[key];
+		// The ids come from the client: keep only sessions that are actually
+		// on offer for this experiment.
+		const open = new Set((await listOpenSessions(experiment.id)).map((s) => s.id));
+		const sessionIds = [...new Set(ids)].filter((id) => open.has(id));
+		if (sessionIds.length === 0 || sessionIds.length > MAX_CANDIDATE_SESSIONS) {
+			return fail(400, {
+				errors: {
+					sessionIds:
+						sessionIds.length === 0
+							? 'Pick at least one session'
+							: `Pick at most ${MAX_CANDIDATE_SESSIONS} sessions`
+				} as Record<string, string>,
+				values: submission.values
+			});
 		}
 
 		const { rawToken } = await createSessionListPreference({
 			experimentId: experiment.id,
-			name: parsed.data.name,
-			email: parsed.data.email,
-			sessionIds: parsed.data.sessionIds.split(',').filter(Boolean),
+			name: submission.name,
+			email: submission.email,
+			sessionIds,
 			notes: parsed.data.notes,
-			snapshotFields
+			snapshotFields: submission.snapshotFields
 		});
 
 		throw redirect(303, resolve(`e/${experiment.slug}/preference/${rawToken}`));

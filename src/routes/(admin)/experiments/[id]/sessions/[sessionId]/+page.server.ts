@@ -8,7 +8,9 @@ import {
 	updateSession
 } from '#lib/server/sessions.js';
 import { listBookingsForSession, setBookingStatus } from '#lib/server/bookings.js';
+import { sessionFormSchema } from '#lib/schemas/session.js';
 import { CLINIC_TZ, formatInTz, localToUtc } from '#lib/server/time.js';
+import { formId, parseForm } from '#lib/server/validate.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /** Format a UTC Date as "YYYY-MM-DDTHH:mm" in CLINIC_TZ for datetime-local inputs. */
@@ -49,80 +51,53 @@ export const load: PageServerLoad = async ({ params }) => {
 			endsAtLabel: formatInTz(session.endsAt),
 			startsAtInput: toClinicTzInput(session.startsAt)
 		},
-		sessionCalendarUrl: `/ics/session/${session.publicIcsToken}.ics`,
 		bookings,
 		clinicTz: CLINIC_TZ
 	};
 };
 
+const attendanceAction =
+	(status: 'attended' | 'no_show' | 'confirmed'): Actions[string] =>
+	async ({ request, params }) => {
+		const id = formId(await request.formData(), 'bookingId');
+		if (!id) return fail(400, { error: 'Missing booking id' });
+		// Scoped to this session, so a booking id from elsewhere is rejected.
+		if (!(await setBookingStatus(id, params.sessionId, status))) {
+			return fail(404, { error: 'Booking not found' });
+		}
+		return { attendanceSet: true };
+	};
+
 export const actions: Actions = {
 	update: async ({ request, params }) => {
-		const formData = await request.formData();
-		const startsAtLocal = String(formData.get('startsAtLocal') ?? '');
-		const durationMinutes = Number(formData.get('durationMinutes') ?? 0);
-		const capacity = Number(formData.get('capacity') ?? 0);
-		const minParticipants = Number(formData.get('minParticipants') ?? 0);
-		const location = String(formData.get('location') ?? '');
-		const notes = String(formData.get('notes') ?? '');
+		const parsed = parseForm(sessionFormSchema, await request.formData());
+		if (!parsed.ok) return parsed.failure;
 
-		if (!startsAtLocal || !durationMinutes || !capacity || !minParticipants) {
-			return fail(400, { error: 'Missing required field' });
-		}
-
-		const startsAt = localToUtc(startsAtLocal);
-		const endsAt = new Date(startsAt.getTime() + durationMinutes * 60 * 1000);
-		await updateSession(params.sessionId, {
+		const startsAt = localToUtc(parsed.data.startsAtLocal);
+		const endsAt = new Date(startsAt.getTime() + parsed.data.durationMinutes * 60 * 1000);
+		const updated = await updateSession(params.sessionId, params.id, {
 			startsAt,
 			endsAt,
-			capacity,
-			minParticipants,
-			location,
-			notes
+			capacity: parsed.data.capacity,
+			minParticipants: parsed.data.minParticipants,
+			location: parsed.data.location,
+			notes: parsed.data.notes
 		});
-		return {
-			saved: true,
-			values: {
-				startsAtLocal,
-				durationMinutes: String(durationMinutes),
-				capacity: String(capacity),
-				minParticipants: String(minParticipants),
-				location,
-				notes
-			}
-		};
+		if (!updated) throw error(404, 'Session not found');
+		return { saved: true, values: parsed.values };
 	},
 
 	cancel: async ({ params }) => {
-		await cancelSession(params.sessionId);
+		await cancelSession(params.sessionId, params.id);
 		return { cancelled: true };
 	},
 
 	delete: async ({ params }) => {
-		await deleteSession(params.sessionId);
+		await deleteSession(params.sessionId, params.id);
 		throw redirect(303, resolve(`experiments/${params.id}/sessions`));
 	},
 
-	markAttended: async ({ request }) => {
-		const formData = await request.formData();
-		const id = String(formData.get('bookingId') ?? '');
-		if (!id) return fail(400, { error: 'Missing booking id' });
-		await setBookingStatus(id, 'attended');
-		return { attendanceSet: true };
-	},
-
-	markNoShow: async ({ request }) => {
-		const formData = await request.formData();
-		const id = String(formData.get('bookingId') ?? '');
-		if (!id) return fail(400, { error: 'Missing booking id' });
-		await setBookingStatus(id, 'no_show');
-		return { attendanceSet: true };
-	},
-
-	unmarkAttendance: async ({ request }) => {
-		const formData = await request.formData();
-		const id = String(formData.get('bookingId') ?? '');
-		if (!id) return fail(400, { error: 'Missing booking id' });
-		await setBookingStatus(id, 'confirmed');
-		return { attendanceSet: true };
-	}
+	markAttended: attendanceAction('attended'),
+	markNoShow: attendanceAction('no_show'),
+	unmarkAttendance: attendanceAction('confirmed')
 };

@@ -9,7 +9,11 @@
 
 	let copied: string | null = $state(null);
 	let manageUrl = $derived(page.url.href);
-	let httpsIcsUrl = $derived(data.origin + resolve(`ics/session/${data.session.sessionToken}.ics`));
+	// Resolved against the page URL so it is absolute during SSR as well
+	// (`resolve` returns a relative path on the server).
+	let httpsIcsUrl = $derived(
+		new URL(resolve(`ics/session/${data.session.sessionToken}.ics`), page.url.href).href
+	);
 	let webcalIcsUrl = $derived(httpsIcsUrl.replace(/^https?:\/\//, 'webcal://'));
 	let googleCalUrl = $derived(
 		`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalIcsUrl)}`
@@ -146,6 +150,14 @@
 		</p>
 	{:else if data.booking.status === 'no_show'}
 		<p class="mt-6 text-gray-700 dark:text-gray-300">This booking was marked as a no-show.</p>
+	{/if}
+
+	{#if form?.error}
+		<p
+			class="mt-6 rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-300"
+		>
+			{form.error}
+		</p>
 	{/if}
 
 	{#if form?.cancelled}

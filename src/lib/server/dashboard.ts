@@ -1,6 +1,7 @@
-import { and, asc, desc, eq, gte, inArray, or } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray } from 'drizzle-orm';
 import { db } from './db';
 import { bookingPreferences, bookings, experiments, participants, sessions } from './db/schema';
+import { OPEN_SESSION_STATUSES } from './session-status';
 
 /**
  * Dashboard stats + upcoming activity feed. Shape is tailored for the
@@ -48,12 +49,7 @@ export async function loadDashboard(opts: { upcomingLimit?: number } = {}): Prom
 	const sessionRows = await db
 		.select()
 		.from(sessions)
-		.where(
-			and(
-				gte(sessions.startsAt, now),
-				or(eq(sessions.status, 'scheduled'), eq(sessions.status, 'confirmed'))
-			)
-		)
+		.where(and(gte(sessions.startsAt, now), inArray(sessions.status, [...OPEN_SESSION_STATUSES])))
 		.orderBy(asc(sessions.startsAt));
 
 	const countsBySession = new Map<string, number>();

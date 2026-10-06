@@ -46,8 +46,9 @@ pnpm build
 NODE_ENV=production node build
 ```
 
-Put it behind a reverse proxy that terminates TLS and sets `X-Forwarded-For`
-(used for public rate-limiting). The app reads all configuration from
+Put it behind a reverse proxy that terminates TLS and sets `X-Forwarded-For`,
+and set `TRUSTED_PROXY=proxy` so the rate limiter keys on the real client IP
+(without it every request appears to come from the proxy). The app reads all configuration from
 environment variables at runtime — see `.env.example` for the full list.
 
 ### Docker
@@ -163,7 +164,8 @@ pnpm lint
 
 ## endpoint details
 
-- All mutating public routes go through an in-memory token-bucket rate limit keyed by client IP. Set `TRUSTED_PROXY=cloudflare` if the deployment is behind Cloudflare — without it, clients can spoof `X-Forwarded-For` to bypass the limit.
+- All mutating public routes, and sign-in, go through an in-memory token-bucket rate limit keyed by client IP. Forwarding headers are only trusted when `TRUSTED_PROXY` is set: `proxy` (your own reverse proxy; right-most `X-Forwarded-For` value) or `cloudflare` (`CF-Connecting-IP`). Unset, the socket address is used.
+- Every route under `(admin)` — page loads and form actions — requires a signed-in session, enforced in `src/hooks.server.ts`.
 - Participant self-manage tokens are 256-bit URL-safe random strings; only their SHA-256 hash is stored in the database.
 - Public routes are served with a strict CSP (nonce-based)
 - ICS feed URLs use tokens, as such, should never be shared

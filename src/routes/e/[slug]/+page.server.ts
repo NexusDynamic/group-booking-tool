@@ -1,26 +1,11 @@
-import { error } from '@sveltejs/kit';
-import { getExperimentBySlug } from '#lib/server/experiments.js';
 import { parseRequiredFields } from '#lib/schemas/experiment.js';
-import { sessionsWithCounts } from '#lib/server/sessions.js';
-import { formatInTz } from '#lib/server/time.js';
+import { listOpenSessions, requirePublishedExperiment } from '#lib/server/public-form.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
-	const experiment = await getExperimentBySlug(params.slug);
-	if (!experiment || !experiment.isPublished) throw error(404, 'Experiment not found');
+	const experiment = await requirePublishedExperiment(params.slug);
 
-	const rawSessions = await sessionsWithCounts(experiment.id, { upcomingOnly: true });
-	const upcoming = rawSessions
-		.filter((s) => s.status === 'scheduled' && s.confirmedCount < s.capacity)
-		.slice(0, 5)
-		.map((s) => ({
-			id: s.id,
-			startsAtLabel: formatInTz(s.startsAt),
-			endsAtLabel: formatInTz(s.endsAt, undefined, { timeStyle: 'short' }),
-			location: s.location,
-			confirmedCount: s.confirmedCount,
-			capacity: s.capacity
-		}));
+	const upcoming = (await listOpenSessions(experiment.id)).filter((s) => !s.isFull).slice(0, 5);
 
 	return {
 		experiment: {

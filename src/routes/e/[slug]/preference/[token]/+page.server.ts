@@ -34,7 +34,9 @@ export const load: PageServerLoad = async ({ params }) => {
 
 export const actions: Actions = {
 	withdraw: async ({ params }) => {
-		await withdrawPreferenceByToken(params.token);
+		const experiment = await getExperimentBySlug(params.slug);
+		if (!experiment) throw error(404, 'Experiment not found');
+		await withdrawPreferenceByToken(params.token, experiment.id);
 		return { withdrawn: true };
 	}
 };

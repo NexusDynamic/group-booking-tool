@@ -6,7 +6,7 @@ import {
 	listReminderRules
 } from '#lib/server/reminders.js';
 import { reminderRuleFormSchema } from '#lib/schemas/reminder.js';
-import { parseForm } from '#lib/server/validate.js';
+import { formId, parseForm } from '#lib/server/validate.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -24,11 +24,10 @@ export const actions: Actions = {
 		await createReminderRule({ experimentId: params.id, ...parsed.data });
 		return { created: true };
 	},
-	delete: async ({ request }) => {
-		const formData = await request.formData();
-		const id = String(formData.get('id') ?? '');
+	delete: async ({ request, params }) => {
+		const id = formId(await request.formData());
 		if (!id) return fail(400, { error: 'Missing rule id' });
-		await deleteReminderRule(id);
+		await deleteReminderRule(id, params.id);
 		return { deleted: true };
 	}
 };

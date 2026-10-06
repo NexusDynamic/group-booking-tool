@@ -4,6 +4,7 @@ import { bookingPreferences, sessions } from './db/schema';
 import { createBooking, upsertParticipant } from './bookings';
 import { generateToken, hashToken } from './tokens';
 import { expandTemplate } from './recurrence';
+import { isOpenStatus } from './session-status';
 import { CLINIC_TZ } from './time';
 
 export type BookingPreference = typeof bookingPreferences.$inferSelect;
@@ -56,6 +57,7 @@ export async function createRecurringPreference(
 			snapshotEmail: input.email,
 			snapshotFields: JSON.stringify(input.snapshotFields ?? {}),
 			kind: 'recurring',
+			notes: input.notes,
 			rrule: input.rrule,
 			dtstartLocal: input.dtstartLocal,
 			durationMinutes: input.durationMinutes,
@@ -84,6 +86,7 @@ export async function createSessionListPreference(
 			snapshotEmail: input.email,
 			snapshotFields: JSON.stringify(input.snapshotFields ?? {}),
 			kind: 'session_list',
+			notes: input.notes,
 			preferredSessionIds: JSON.stringify(input.sessionIds),
 			manageTokenHash
 		})
@@ -129,9 +132,18 @@ export async function findPreferenceByToken(
 	return rows[0];
 }
 
-export async function withdrawPreferenceByToken(rawToken: string): Promise<void> {
+/**
+ * Withdraw a pending preference from the public self-manage page. Pass
+ * `experimentId` (from the URL's slug) to require that the token belongs to
+ * that experiment. No-op for unknown tokens or non-pending preferences.
+ */
+export async function withdrawPreferenceByToken(
+	rawToken: string,
+	experimentId?: string
+): Promise<void> {
 	const pref = await findPreferenceByToken(rawToken);
 	if (!pref) return;
+	if (experimentId !== undefined && pref.experimentId !== experimentId) return;
 	if (pref.status !== 'pending') return;
 	await db
 		.update(bookingPreferences)
@@ -144,7 +156,7 @@ export async function withdrawPreferenceByToken(rawToken: string): Promise<void>
  *
  * For `recurring` preferences: we expand the RRULE across the preference's
  * window (or a 60-day default lookahead) and intersect those wall-clock
- * instants with existing `scheduled` sessions on the experiment. A session
+ * instants with existing open sessions on the experiment. A session
  * matches when its `startsAt` is within 1 minute of a preferred instant.
  *
  * For `session_list` preferences: just fetch those session ids.
@@ -174,7 +186,7 @@ export async function suggestMatchingSessions(
 				)
 			)
 			.orderBy(asc(sessions.startsAt));
-		return rows.filter((r) => r.status === 'scheduled');
+		return rows.filter((r) => isOpenStatus(r.status));
 	}
 
 	// recurring: expand rrule.
@@ -192,7 +204,7 @@ export async function suggestMatchingSessions(
 	});
 	if (expanded.length === 0) return [];
 
-	// Find scheduled sessions within the window for this experiment.
+	// Find open sessions within the window for this experiment.
 	const candidates = await db
 		.select({
 			id: sessions.id,
@@ -209,7 +221,7 @@ export async function suggestMatchingSessions(
 	const tolerance = 60 * 1000; // ±1 minute
 
 	return candidates.filter((c) => {
-		if (c.status !== 'scheduled') return false;
+		if (!isOpenStatus(c.status)) return false;
 		const t = new Date(c.startsAt).getTime();
 		if (expandedMs.has(t)) return true;
 		for (const ms of expandedMs) {
@@ -223,7 +235,9 @@ export async function suggestMatchingSessions(
  * Admin action: promote a preference into real bookings on specific sessions.
  *
  * We create one `bookings` row per session via the normal `createBooking`
- * path (so capacity checks still fire), then mark the preference as
+ * path (so capacity, ownership and prior-attendance checks still fire —
+ * `createBooking` rejects sessions outside the preference's experiment),
+ * then mark the preference as
  * `assigned`. If any booking fails the preference stays pending and the
  * already-created bookings remain — the researcher can retry on a different
  * session set.
@@ -243,6 +257,7 @@ export async function assignPreferenceToSessions(
 	for (const sessionId of sessionIds) {
 		try {
 			await createBooking({
+				experimentId: pref.experimentId,
 				sessionId,
 				participantId: pref.participantId,
 				snapshotName: pref.snapshotName,
@@ -265,11 +280,18 @@ export async function assignPreferenceToSessions(
 	return { created, errors };
 }
 
-export async function declinePreference(preferenceId: string): Promise<void> {
+/** Decline a pending preference. Scoped to `experimentId`. */
+export async function declinePreference(preferenceId: string, experimentId: string): Promise<void> {
 	await db
 		.update(bookingPreferences)
 		.set({ status: 'declined', updatedAt: new Date() })
-		.where(eq(bookingPreferences.id, preferenceId));
+		.where(
+			and(
+				eq(bookingPreferences.id, preferenceId),
+				eq(bookingPreferences.experimentId, experimentId),
+				eq(bookingPreferences.status, 'pending')
+			)
+		);
 }
 
 function parseSessionIds(raw: string | null): string[] {

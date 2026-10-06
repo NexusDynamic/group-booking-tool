@@ -3,6 +3,7 @@ import { getExperimentById } from '#lib/server/experiments.js';
 import {
 	createTemplate,
 	deleteTemplate,
+	getTemplateById,
 	listTemplates,
 	materialiseTemplate,
 	regenerateFutureSessions
@@ -10,7 +11,7 @@ import {
 import { buildWeeklyRRule } from '#lib/server/recurrence.js';
 import { CLINIC_TZ, formatInTz, localToUtc } from '#lib/server/time.js';
 import { recurrenceTemplateFormSchema } from '#lib/schemas/session.js';
-import { parseForm } from '#lib/server/validate.js';
+import { formId, parseForm } from '#lib/server/validate.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -64,6 +65,8 @@ export const actions: Actions = {
 			durationMinutes,
 			capacity,
 			minParticipants,
+			location,
+			notes,
 			windowStart,
 			windowEnd
 		} = parsed.data;
@@ -82,6 +85,8 @@ export const actions: Actions = {
 			durationMinutes,
 			capacity,
 			minParticipants,
+			location,
+			notes,
 			windowStart: windowStartToUtc(windowStart),
 			windowEnd: windowEndToUtc(windowEnd)
 		});
@@ -89,27 +94,28 @@ export const actions: Actions = {
 		return { created: true };
 	},
 
-	delete: async ({ request }) => {
-		const formData = await request.formData();
-		const id = String(formData.get('id') ?? '');
+	delete: async ({ request, params }) => {
+		const id = formId(await request.formData());
 		if (!id) return fail(400, { deleteError: 'Missing template id' });
-		await deleteTemplate(id);
+		await deleteTemplate(id, params.id);
 		return { deleted: true };
 	},
 
-	generate: async ({ request }) => {
-		const formData = await request.formData();
-		const id = String(formData.get('id') ?? '');
-		if (!id) return fail(400, { generateError: 'Missing template id' });
-		const inserted = await materialiseTemplate(id);
+	generate: async ({ request, params }) => {
+		const id = formId(await request.formData());
+		if (!id || !(await getTemplateById(id, params.id))) {
+			return fail(400, { generateError: 'Template not found' });
+		}
+		const inserted = await materialiseTemplate(id, params.id);
 		return { generated: true, inserted };
 	},
 
-	regenerate: async ({ request }) => {
-		const formData = await request.formData();
-		const id = String(formData.get('id') ?? '');
-		if (!id) return fail(400, { generateError: 'Missing template id' });
-		const result = await regenerateFutureSessions(id);
+	regenerate: async ({ request, params }) => {
+		const id = formId(await request.formData());
+		if (!id || !(await getTemplateById(id, params.id))) {
+			return fail(400, { generateError: 'Template not found' });
+		}
+		const result = await regenerateFutureSessions(id, params.id);
 		return { regenerated: true, ...result };
 	}
 };

@@ -1,36 +1,27 @@
-import { error, fail, redirect } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import { resolve } from '$app/paths';
-import { buildPrivacyNotice, getExperimentBySlug } from '#lib/server/experiments.js';
+import { buildPrivacyNotice } from '#lib/server/experiments.js';
 import { parseRequiredFields } from '#lib/schemas/experiment.js';
-import { sessionsWithCounts } from '#lib/server/sessions.js';
-import { bookingSchemaFor } from '#lib/schemas/booking.js';
 import {
+	AlreadyBookedError,
+	BookingStateError,
 	createBooking,
 	PriorAttendanceError,
 	SessionFullError,
 	upsertParticipant
 } from '#lib/server/bookings.js';
-import { hasPriorAttendance } from '#lib/server/exclusions.js';
-import { CLINIC_TZ, formatInTz } from '#lib/server/time.js';
+import {
+	listOpenSessions,
+	parseParticipantSubmission,
+	requirePublishedExperiment
+} from '#lib/server/public-form.js';
+import { formId } from '#lib/server/validate.js';
+import { CLINIC_TZ } from '#lib/server/time.js';
 import { DATA_RETENTION_DAYS } from '$app/env/private';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
-	const experiment = await getExperimentBySlug(params.slug);
-	if (!experiment || !experiment.isPublished) throw error(404, 'Experiment not found');
-
-	const raw = await sessionsWithCounts(experiment.id, { upcomingOnly: true });
-	const sessions = raw
-		.filter((s) => s.status === 'scheduled')
-		.map((s) => ({
-			id: s.id,
-			startsAtLabel: formatInTz(s.startsAt),
-			endsAtLabel: formatInTz(s.endsAt, undefined, { timeStyle: 'short' }),
-			confirmedCount: s.confirmedCount,
-			capacity: s.capacity,
-			location: s.location,
-			isFull: s.confirmedCount >= s.capacity
-		}));
+	const experiment = await requirePublishedExperiment(params.slug);
 
 	return {
 		experiment: {
@@ -38,7 +29,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			slug: experiment.slug,
 			name: experiment.name
 		},
-		sessions,
+		sessions: await listOpenSessions(experiment.id),
 		requiredFields: parseRequiredFields(experiment.requiredFields),
 		privacyNotice: buildPrivacyNotice(experiment, DATA_RETENTION_DAYS),
 		clinicTz: CLINIC_TZ
@@ -47,81 +38,34 @@ export const load: PageServerLoad = async ({ params }) => {
 
 export const actions: Actions = {
 	book: async ({ request, params }) => {
-		const experiment = await getExperimentBySlug(params.slug);
-		if (!experiment || !experiment.isPublished) throw error(404, 'Experiment not found');
+		const experiment = await requirePublishedExperiment(params.slug);
 
 		const formData = await request.formData();
-		const sessionId = String(formData.get('sessionId') ?? '');
+		const sessionId = formId(formData, 'sessionId');
 		if (!sessionId) return fail(400, { error: 'Please pick a session.' });
 
-		const requiredFields = parseRequiredFields(experiment.requiredFields);
-		const schema = bookingSchemaFor(requiredFields);
-
-		const values: Record<string, string> = {};
-		for (const [k, v] of formData.entries()) {
-			if (typeof v === 'string') values[k] = v;
-		}
-		const result = schema.safeParse(values);
-		if (!result.success) {
-			const errors: Record<string, string> = {};
-			for (const issue of result.error.issues) {
-				const path = issue.path.join('.') || '_';
-				if (!errors[path]) errors[path] = issue.message;
-			}
-			return fail(400, { errors, values, sessionId });
-		}
-
-		// Honeypot — reject silently-ish.
-		if (values.honeypot && values.honeypot.length > 0) {
-			return fail(400, { error: 'Submission rejected.', values, sessionId });
-		}
-
-		// Privacy notice acknowledgement — required.
-		if (values.consent !== 'on') {
-			const errors: Record<string, string> = {
-				consent: 'You must acknowledge the privacy notice to continue.'
-			};
-			return fail(400, { errors, values, sessionId });
-		}
-
-		// Upsert participant, check exclusion, then create booking atomically.
-		// Zod's extended dynamic schema widens the result to unknown; cast back.
-		const parsedData = result.data as { name: string; email: string; [key: string]: unknown };
+		const submission = parseParticipantSubmission(experiment, formData, { sessionId });
+		if (!submission.ok) return submission.failure;
+		const { values } = submission;
 
 		const participant = await upsertParticipant({
-			email: parsedData.email,
-			displayName: parsedData.name
+			email: submission.email,
+			displayName: submission.name
 		});
 
-		if (experiment.excludePriorAttendees) {
-			const blocked = await hasPriorAttendance(participant.id, experiment.id);
-			if (blocked) {
-				return fail(403, {
-					error: 'You have already taken part in this experiment and cannot sign up again.',
-					values,
-					sessionId
-				});
-			}
-		}
-
-		// Extract experiment-specific fields into a snapshot object.
-		const snapshotFields: Record<string, unknown> = {};
-		for (const f of requiredFields) {
-			const key = `field_${f.key}`;
-			if (key in parsedData) {
-				snapshotFields[f.key] = parsedData[key];
-			}
-		}
-
+		// createBooking checks, in one transaction, that the session belongs to
+		// this experiment and is still open, the prior-attendance exclusion,
+		// and capacity.
+		let rawToken: string;
 		try {
-			const { rawToken } = await createBooking({
+			({ rawToken } = await createBooking({
+				experimentId: experiment.id,
 				sessionId,
 				participantId: participant.id,
-				snapshotName: parsedData.name,
-				snapshotEmail: parsedData.email,
-				snapshotFields
-			});
-			throw redirect(303, resolve(`e/${experiment.slug}/booked/${rawToken}`));
+				snapshotName: submission.name,
+				snapshotEmail: submission.email,
+				snapshotFields: submission.snapshotFields
+			}));
 		} catch (err) {
 			if (err instanceof SessionFullError) {
 				return fail(409, {
@@ -133,7 +77,19 @@ export const actions: Actions = {
 			if (err instanceof PriorAttendanceError) {
 				return fail(403, { error: err.message, values, sessionId });
 			}
+			if (err instanceof AlreadyBookedError) {
+				return fail(409, { error: err.message, values, sessionId });
+			}
+			if (err instanceof BookingStateError) {
+				return fail(409, {
+					error: 'That session is no longer available. Please pick another.',
+					values,
+					sessionId: ''
+				});
+			}
 			throw err;
 		}
+
+		throw redirect(303, resolve(`e/${experiment.slug}/booked/${rawToken}`));
 	}
 };

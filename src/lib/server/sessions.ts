@@ -8,6 +8,7 @@ import {
 	type experiments as experimentsTable
 } from './db/schema';
 import { expandTemplate } from './recurrence';
+import { syncSessionStatus } from './session-status';
 
 export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
@@ -99,27 +100,45 @@ export async function createOneOffSession(
 	return row;
 }
 
+/**
+ * Admin mutations below take the owning `experimentId` and include it in the
+ * WHERE clause, so an id belonging to a different experiment is a no-op.
+ * Each returns whether a row was affected.
+ */
 export async function updateSession(
 	id: string,
+	experimentId: string,
 	patch: Partial<
 		Pick<
 			NewSession,
 			'startsAt' | 'endsAt' | 'capacity' | 'minParticipants' | 'location' | 'notes' | 'status'
 		>
 	>
-): Promise<void> {
-	await db
-		.update(sessions)
-		.set({ ...patch, updatedAt: new Date() })
-		.where(eq(sessions.id, id));
+): Promise<boolean> {
+	return db.transaction((tx) => {
+		const updated = tx
+			.update(sessions)
+			.set({ ...patch, updatedAt: new Date() })
+			.where(and(eq(sessions.id, id), eq(sessions.experimentId, experimentId)))
+			.returning({ id: sessions.id })
+			.all();
+		if (updated.length === 0) return false;
+		// minParticipants may have changed which side of the threshold we're on.
+		syncSessionStatus(tx, id);
+		return true;
+	});
 }
 
-export async function cancelSession(id: string): Promise<void> {
-	await updateSession(id, { status: 'cancelled' });
+export async function cancelSession(id: string, experimentId: string): Promise<boolean> {
+	return updateSession(id, experimentId, { status: 'cancelled' });
 }
 
-export async function deleteSession(id: string): Promise<void> {
-	await db.delete(sessions).where(eq(sessions.id, id));
+export async function deleteSession(id: string, experimentId: string): Promise<boolean> {
+	const deleted = await db
+		.delete(sessions)
+		.where(and(eq(sessions.id, id), eq(sessions.experimentId, experimentId)))
+		.returning({ id: sessions.id });
+	return deleted.length > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -134,11 +153,18 @@ export async function listTemplates(experimentId: string): Promise<RecurrenceTem
 		.orderBy(asc(recurrenceTemplates.createdAt));
 }
 
-export async function getTemplateById(id: string): Promise<RecurrenceTemplate | undefined> {
+export async function getTemplateById(
+	id: string,
+	experimentId?: string
+): Promise<RecurrenceTemplate | undefined> {
 	const rows = await db
 		.select()
 		.from(recurrenceTemplates)
-		.where(eq(recurrenceTemplates.id, id))
+		.where(
+			experimentId === undefined
+				? eq(recurrenceTemplates.id, id)
+				: and(eq(recurrenceTemplates.id, id), eq(recurrenceTemplates.experimentId, experimentId))
+		)
 		.limit(1);
 	return rows[0];
 }
@@ -151,6 +177,8 @@ export async function createTemplate(input: {
 	durationMinutes: number;
 	capacity: number;
 	minParticipants: number;
+	location?: string;
+	notes?: string;
 	windowStart?: Date | null;
 	windowEnd?: Date | null;
 }): Promise<RecurrenceTemplate> {
@@ -164,6 +192,8 @@ export async function createTemplate(input: {
 			durationMinutes: input.durationMinutes,
 			capacity: input.capacity,
 			minParticipants: input.minParticipants,
+			location: input.location ?? '',
+			notes: input.notes ?? '',
 			windowStart: input.windowStart ?? null,
 			windowEnd: input.windowEnd ?? null
 		})
@@ -171,16 +201,23 @@ export async function createTemplate(input: {
 	return row;
 }
 
-export async function deleteTemplate(id: string): Promise<void> {
-	await db.delete(recurrenceTemplates).where(eq(recurrenceTemplates.id, id));
+export async function deleteTemplate(id: string, experimentId: string): Promise<boolean> {
+	const deleted = await db
+		.delete(recurrenceTemplates)
+		.where(and(eq(recurrenceTemplates.id, id), eq(recurrenceTemplates.experimentId, experimentId)))
+		.returning({ id: recurrenceTemplates.id });
+	return deleted.length > 0;
 }
 
 /**
  * Expand a template into concrete `sessions` rows. Uses ON CONFLICT on the
  * partial unique index `(source_template_id, starts_at)` to be idempotent.
  */
-export async function materialiseTemplate(templateId: string): Promise<number> {
-	const template = await getTemplateById(templateId);
+export async function materialiseTemplate(
+	templateId: string,
+	experimentId?: string
+): Promise<number> {
+	const template = await getTemplateById(templateId, experimentId);
 	if (!template) throw new Error(`template ${templateId} not found`);
 
 	const occurrences = expandTemplate({
@@ -224,11 +261,14 @@ export async function materialiseTemplate(templateId: string): Promise<number> {
  * have zero bookings, then re-materialise. Never touches sessions with any
  * existing bookings, even cancelled ones (to preserve history).
  */
-export async function regenerateFutureSessions(templateId: string): Promise<{
+export async function regenerateFutureSessions(
+	templateId: string,
+	experimentId?: string
+): Promise<{
 	deleted: number;
 	inserted: number;
 }> {
-	const template = await getTemplateById(templateId);
+	const template = await getTemplateById(templateId, experimentId);
 	if (!template) throw new Error(`template ${templateId} not found`);
 
 	const now = new Date();

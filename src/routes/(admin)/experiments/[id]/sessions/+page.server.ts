@@ -7,7 +7,7 @@ import {
 	sessionsWithCounts
 } from '#lib/server/sessions.js';
 import { sessionFormSchema } from '#lib/schemas/session.js';
-import { parseForm } from '#lib/server/validate.js';
+import { formId, parseForm } from '#lib/server/validate.js';
 import { CLINIC_TZ, formatInTz, localToUtc } from '#lib/server/time.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -46,19 +46,17 @@ export const actions: Actions = {
 		return { created: true };
 	},
 
-	cancel: async ({ request }) => {
-		const formData = await request.formData();
-		const id = String(formData.get('id') ?? '');
+	cancel: async ({ request, params }) => {
+		const id = formId(await request.formData());
 		if (!id) return fail(400, { error: 'Missing session id' });
-		await cancelSession(id);
+		await cancelSession(id, params.id);
 		return { cancelled: true };
 	},
 
-	delete: async ({ request }) => {
-		const formData = await request.formData();
-		const id = String(formData.get('id') ?? '');
+	delete: async ({ request, params }) => {
+		const id = formId(await request.formData());
 		if (!id) return fail(400, { error: 'Missing session id' });
-		await deleteSession(id);
+		await deleteSession(id, params.id);
 		return { deleted: true };
 	}
 };

@@ -122,7 +122,8 @@ export const sessions = sqliteTable(
 		capacity: integer('capacity').notNull(),
 		minParticipants: integer('min_participants').notNull(),
 		location: text('location').notNull().default(''),
-		// 'scheduled' | 'cancelled' | 'completed'
+		// 'scheduled' | 'confirmed' | 'cancelled' | 'completed' — the first two are
+		// derived from the booking count; see session-status.ts
 		status: text('status').notNull().default('scheduled'),
 		notes: text('notes').notNull().default(''),
 		publicIcsToken: text('public_ics_token').notNull(),

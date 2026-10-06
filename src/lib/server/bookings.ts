@@ -1,6 +1,8 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from './db';
-import { bookings, participants, sessions } from './db/schema';
+import { bookings, experiments, participants, sessions } from './db/schema';
+import { priorAttendanceExists } from './exclusions';
+import { isOpenStatus, syncSessionStatus } from './session-status';
 import { generateToken, hashToken } from './tokens';
 import { normaliseEmail } from './validate';
 
@@ -19,23 +21,36 @@ export class SessionFullError extends Error {
 
 /**
  * Researcher has set `exclude_prior_attendees` and this participant has an
- * `attended` booking for this experiment already.
+ * `attended` / `no_show` booking for this experiment already.
  */
 export class PriorAttendanceError extends Error {
 	constructor() {
-		super('You have already attended this experiment.');
+		super('You have already taken part in this experiment and cannot sign up again.');
+	}
+}
+
+/** The participant already holds a confirmed seat on this session. */
+export class AlreadyBookedError extends Error {
+	constructor() {
+		super('You are already booked on this session.');
 	}
 }
 
 /**
- * Booking status changes that participants are not allowed to perform (e.g.
- * cancelling an already-cancelled booking).
+ * The booking or its session is not in a state that allows the requested
+ * change (session cancelled / already started / belongs to another
+ * experiment, booking already attended, unknown token, ...).
  */
 export class BookingStateError extends Error {}
 
 /**
  * Upsert a participant row keyed by normalised email. Returns the row.
  * Thin wrapper — SQLite `ON CONFLICT` lets us do this in a single statement.
+ *
+ * An existing participant's `displayName` is left alone: this is reachable
+ * from unauthenticated forms, so anyone who knows an email address could
+ * otherwise rename that participant. Each booking snapshots the name typed
+ * at the time.
  */
 export async function upsertParticipant(input: {
 	email: string;
@@ -47,13 +62,16 @@ export async function upsertParticipant(input: {
 		.values({ emailNormalised, displayName: input.displayName })
 		.onConflictDoUpdate({
 			target: participants.emailNormalised,
-			set: { displayName: input.displayName }
+			// No-op update so `.returning()` yields the existing row.
+			set: { emailNormalised }
 		})
 		.returning();
 	return row;
 }
 
 export interface CreateBookingInput {
+	/** Experiment the caller is acting on; the session must belong to it. */
+	experimentId: string;
 	sessionId: string;
 	participantId: string;
 	snapshotName: string;
@@ -66,17 +84,27 @@ export interface CreateBookingResult {
 	rawToken: string;
 }
 
+function confirmedCount(tx: Parameters<typeof syncSessionStatus>[0], sessionId: string): number {
+	const rows = tx
+		.select({ n: sql<number>`count(*)` })
+		.from(bookings)
+		.where(and(eq(bookings.sessionId, sessionId), eq(bookings.status, 'confirmed')))
+		.all();
+	return Number(rows[0]?.n ?? 0);
+}
+
 /**
  * Atomically reserve a seat on a session and create a booking row.
  *
- * Capacity enforcement: we run the whole thing inside a synchronous
- * `db.transaction(...)` (better-sqlite3 serializes writes anyway, but the
- * transaction gives us a clean rollback path if anything inside throws).
- * Inside the transaction we:
- *   1. Re-read the session row to check it exists and is scheduled.
- *   2. Count confirmed bookings for this session.
- *   3. Throw `SessionFullError` if the count has reached capacity.
- *   4. Otherwise insert the booking.
+ * Everything runs inside a synchronous `db.transaction(...)` (better-sqlite3
+ * serializes writes, so the checks and the insert cannot interleave with
+ * another booking). Inside the transaction we:
+ *   1. Re-read the session: it must belong to `experimentId`, be open, and
+ *      not have started yet. `sessionId` comes straight from a public form,
+ *      so this is what stops bookings on another (or unpublished) experiment.
+ *   2. Enforce `exclude_prior_attendees` and one-seat-per-participant.
+ *   3. Count confirmed bookings and throw `SessionFullError` at capacity.
+ *   4. Insert the booking and re-derive the session's status.
  *
  * The raw token is returned only from this function — after this call it
  * lives solely in the URL the caller embeds in the response.
@@ -85,24 +113,45 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
 	const rawToken = generateToken();
 	const manageTokenHash = hashToken(rawToken);
 
-	// better-sqlite3 transactions are synchronous; drizzle's `.transaction()`
-	// accepts a sync callback for this driver. We wrap in a Promise-returning
-	// async function for API consistency.
 	const booking = db.transaction((tx) => {
-		const sessionRows = tx.select().from(sessions).where(eq(sessions.id, input.sessionId)).all();
-		const session = sessionRows[0];
-		if (!session) throw new Error(`Session ${input.sessionId} not found`);
-		if (session.status !== 'scheduled' && session.status !== 'confirmed') {
-			throw new BookingStateError(`Session is ${session.status}`);
+		const session = tx.select().from(sessions).where(eq(sessions.id, input.sessionId)).all()[0];
+		if (!session || session.experimentId !== input.experimentId) {
+			throw new BookingStateError('This session is not available.');
+		}
+		if (!isOpenStatus(session.status)) {
+			throw new BookingStateError(`This session is ${session.status}.`);
+		}
+		if (session.startsAt.getTime() <= Date.now()) {
+			throw new BookingStateError('This session has already started.');
 		}
 
-		const countRows = tx
-			.select({ n: sql<number>`count(*)` })
+		const experiment = tx
+			.select({ excludePriorAttendees: experiments.excludePriorAttendees })
+			.from(experiments)
+			.where(eq(experiments.id, input.experimentId))
+			.all()[0];
+		if (
+			experiment?.excludePriorAttendees &&
+			priorAttendanceExists(tx, input.participantId, input.experimentId)
+		) {
+			throw new PriorAttendanceError();
+		}
+
+		const existing = tx
+			.select({ id: bookings.id })
 			.from(bookings)
-			.where(and(eq(bookings.sessionId, input.sessionId), eq(bookings.status, 'confirmed')))
+			.where(
+				and(
+					eq(bookings.sessionId, input.sessionId),
+					eq(bookings.participantId, input.participantId),
+					eq(bookings.status, 'confirmed')
+				)
+			)
+			.limit(1)
 			.all();
-		const confirmed = Number(countRows[0]?.n ?? 0);
-		if (confirmed >= session.capacity) throw new SessionFullError();
+		if (existing.length > 0) throw new AlreadyBookedError();
+
+		if (confirmedCount(tx, input.sessionId) >= session.capacity) throw new SessionFullError();
 
 		const [row] = tx
 			.insert(bookings)
@@ -116,16 +165,7 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
 			})
 			.returning()
 			.all();
-		if (
-			session.status === 'scheduled' &&
-			(confirmed == session.capacity - 1 || confirmed + 1 >= session.minParticipants)
-		) {
-			// Update session to 'confirmed' if this booking fills the last seat, or meets the minParticipants threshold.
-			tx.update(sessions)
-				.set({ status: 'confirmed', updatedAt: new Date() })
-				.where(eq(sessions.id, session.id))
-				.run();
-		}
+		syncSessionStatus(tx, session.id);
 		return row;
 	});
 
@@ -149,44 +189,42 @@ export async function findBookingByToken(rawToken: string): Promise<Booking | un
  * Cancel a booking from the public self-manage page. Idempotent: cancelling
  * an already-cancelled booking is a no-op.
  *
- * If cancelling drops the confirmed count below the session's minParticipants
- * threshold, the session is reverted from 'confirmed' back to 'scheduled' so
- * it re-appears on the participant booking pages.
+ * Pass `experimentId` (from the URL's slug) to require that the token belongs
+ * to that experiment. The session's `scheduled` / `confirmed` status is
+ * re-derived, so a session that drops below its minimum reverts.
  */
-export async function cancelBookingByToken(rawToken: string): Promise<Booking> {
-	const booking = await findBookingByToken(rawToken);
-	if (!booking) throw new BookingStateError('Booking not found');
-	if (booking.status === 'cancelled') return booking;
-	if (booking.status === 'attended' || booking.status === 'no_show') {
-		throw new BookingStateError(`Cannot cancel — booking is ${booking.status}`);
-	}
-
+export async function cancelBookingByToken(
+	rawToken: string,
+	experimentId?: string
+): Promise<Booking> {
+	const manageTokenHash = hashToken(rawToken);
 	return db.transaction((tx) => {
+		const booking = tx
+			.select()
+			.from(bookings)
+			.where(eq(bookings.manageTokenHash, manageTokenHash))
+			.all()[0];
+		if (!booking) throw new BookingStateError('Booking not found');
+		if (experimentId !== undefined) {
+			const session = tx
+				.select({ experimentId: sessions.experimentId })
+				.from(sessions)
+				.where(eq(sessions.id, booking.sessionId))
+				.all()[0];
+			if (session?.experimentId !== experimentId) throw new BookingStateError('Booking not found');
+		}
+		if (booking.status === 'cancelled') return booking;
+		if (booking.status === 'attended' || booking.status === 'no_show') {
+			throw new BookingStateError(`Cannot cancel — booking is ${booking.status}`);
+		}
+
 		const [updated] = tx
 			.update(bookings)
 			.set({ status: 'cancelled', updatedAt: new Date() })
 			.where(eq(bookings.id, booking.id))
 			.returning()
 			.all();
-
-		// Revert session to 'scheduled' if confirmed count drops below minimum.
-		const sessionRows = tx.select().from(sessions).where(eq(sessions.id, booking.sessionId)).all();
-		const session = sessionRows[0];
-		if (session && session.status === 'confirmed') {
-			const countRows = tx
-				.select({ n: sql<number>`count(*)` })
-				.from(bookings)
-				.where(and(eq(bookings.sessionId, booking.sessionId), eq(bookings.status, 'confirmed')))
-				.all();
-			const remaining = Number(countRows[0]?.n ?? 0);
-			if (remaining < session.minParticipants) {
-				tx.update(sessions)
-					.set({ status: 'scheduled', updatedAt: new Date() })
-					.where(eq(sessions.id, session.id))
-					.run();
-			}
-		}
-
+		syncSessionStatus(tx, booking.sessionId);
 		return updated;
 	});
 }
@@ -200,10 +238,25 @@ export async function listBookingsForSession(sessionId: string): Promise<Booking
 		.orderBy(desc(bookings.createdAt));
 }
 
-/** Admin-level status update: mark attended / no-show / confirmed. */
+/**
+ * Admin-level status update: mark attended / no-show / confirmed. Scoped to
+ * `sessionId` so a booking id from another session is ignored. Returns
+ * whether a booking was updated.
+ */
 export async function setBookingStatus(
 	id: string,
+	sessionId: string,
 	status: 'confirmed' | 'cancelled' | 'attended' | 'no_show'
-): Promise<void> {
-	await db.update(bookings).set({ status, updatedAt: new Date() }).where(eq(bookings.id, id));
+): Promise<boolean> {
+	return db.transaction((tx) => {
+		const updated = tx
+			.update(bookings)
+			.set({ status, updatedAt: new Date() })
+			.where(and(eq(bookings.id, id), eq(bookings.sessionId, sessionId)))
+			.returning({ id: bookings.id })
+			.all();
+		if (updated.length === 0) return false;
+		syncSessionStatus(tx, sessionId);
+		return true;
+	});
 }

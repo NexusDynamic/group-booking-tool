@@ -1,11 +1,15 @@
-import { error } from '@sveltejs/kit';
+import { error, fail } from '@sveltejs/kit';
 import { getExperimentBySlug } from '#lib/server/experiments.js';
 import { getSessionById } from '#lib/server/sessions.js';
-import { cancelBookingByToken, findBookingByToken } from '#lib/server/bookings.js';
+import {
+	BookingStateError,
+	cancelBookingByToken,
+	findBookingByToken
+} from '#lib/server/bookings.js';
 import { formatInTz } from '#lib/server/time.js';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ params, url }) => {
+export const load: PageServerLoad = async ({ params }) => {
 	const experiment = await getExperimentBySlug(params.slug);
 	if (!experiment) throw error(404, 'Experiment not found');
 
@@ -16,8 +20,6 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	if (!session || session.experimentId !== experiment.id) {
 		throw error(404, 'This booking link is not valid');
 	}
-
-	const origin = url.origin;
 
 	return {
 		experiment: {
@@ -37,14 +39,20 @@ export const load: PageServerLoad = async ({ params, url }) => {
 			status: session.status,
 			sessionToken: session.publicIcsToken,
 			notes: session.notes
-		},
-		origin: origin
+		}
 	};
 };
 
 export const actions: Actions = {
 	cancel: async ({ params }) => {
-		await cancelBookingByToken(params.token);
+		const experiment = await getExperimentBySlug(params.slug);
+		if (!experiment) throw error(404, 'Experiment not found');
+		try {
+			await cancelBookingByToken(params.token, experiment.id);
+		} catch (err) {
+			if (err instanceof BookingStateError) return fail(409, { error: err.message });
+			throw err;
+		}
 		return { cancelled: true };
 	}
 };

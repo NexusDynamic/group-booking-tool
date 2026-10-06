@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
 	import type { ActionData, PageData } from './$types';
 	import ExperimentNav from '#lib/components/ExperimentNav.svelte';
 	import Alert from '#lib/components/Alert.svelte';
@@ -16,11 +17,15 @@
 		Math.round((new Date(session.endsAt).getTime() - new Date(session.startsAt).getTime()) / 60000)
 	);
 
+	// Absolute URL (origin + base path) so it can be pasted into a calendar app.
+	let sessionCalendarUrl = $derived(
+		new URL(resolve(`ics/session/${session.publicIcsToken}.ics`), page.url.href).href
+	);
+
 	let copied = $state<boolean>(false);
 
 	async function copy() {
-		const url = data.sessionCalendarUrl;
-		await navigator.clipboard.writeText(url);
+		await navigator.clipboard.writeText(sessionCalendarUrl);
 		copied = true;
 		setTimeout(() => (copied = false), 2000);
 	}
@@ -58,6 +63,9 @@
 {#if form?.cancelled}
 	<Alert variant="success">Session cancelled.</Alert>
 {/if}
+{#if form?.error}
+	<Alert variant="error">{form.error}</Alert>
+{/if}
 
 <section class="mt-8">
 	<Card class="p-4">
@@ -65,7 +73,7 @@
 		<div class="mt-3 flex gap-2">
 			<input
 				readonly
-				value={data.sessionCalendarUrl}
+				value={sessionCalendarUrl}
 				class="{inputClass} flex-1 bg-gray-50 font-mono text-xs"
 			/>
 			<button
@@ -148,7 +156,7 @@
 				update({ reset: false })}
 		class="mt-4 grid gap-4 sm:grid-cols-2"
 	>
-		<FormField label="Start time">
+		<FormField label="Start time" error={form?.errors?.startsAtLocal}>
 			<input
 				type="datetime-local"
 				name="startsAtLocal"
@@ -158,7 +166,7 @@
 			/>
 			<span class="mt-1 text-xs text-gray-500 dark:text-gray-400">Times in {data.clinicTz}</span>
 		</FormField>
-		<FormField label="Duration (minutes)">
+		<FormField label="Duration (minutes)" error={form?.errors?.durationMinutes}>
 			<input
 				type="number"
 				name="durationMinutes"
@@ -168,7 +176,7 @@
 				class={inputClass}
 			/>
 		</FormField>
-		<FormField label="Max participants">
+		<FormField label="Max participants" error={form?.errors?.capacity}>
 			<input
 				type="number"
 				name="capacity"
@@ -178,7 +186,7 @@
 				class={inputClass}
 			/>
 		</FormField>
-		<FormField label="Min participants">
+		<FormField label="Min participants" error={form?.errors?.minParticipants}>
 			<input
 				type="number"
 				name="minParticipants"

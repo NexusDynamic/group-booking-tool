@@ -1,34 +1,20 @@
 import { building } from '$app/env';
+import { error, redirect } from '@sveltejs/kit';
 import { sequence, type Handle } from '@sveltejs/kit/hooks';
+import { resolve as resolvePath } from '$app/paths';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
-import { auth } from '#lib/server/auth.js';
-import { db } from '#lib/server/db/index.js';
-import { user } from '#lib/server/db/schema.js';
-import { rateLimit } from '#lib/server/rate-limit.js';
+import { auth, isSignupLocked } from '#lib/server/auth.js';
+import { clientIp, isAdminRoute, isPublicBookingRoute } from '#lib/server/guards.js';
+import { LOGIN_LIMIT, rateLimit } from '#lib/server/rate-limit.js';
 import { TRUSTED_PROXY } from '$app/env/private';
 
 /**
- * Lock signups once any user exists. The tool is single-researcher; the admin
- * is created via `pnpm seed:admin`, and better-auth's signup endpoints are
- * 403'd for everyone afterwards.
- *
- * We cache the "a user exists" flag in memory after the first positive check
- * because the answer is monotonic: once true, it stays true.
+ * Early 403 for better-auth's signup endpoints once an admin exists. The
+ * authoritative lock is the `databaseHooks.user.create.before` hook in
+ * `auth.ts`; this just avoids doing any work for the obvious case.
  */
-let lockedCache = false;
-
-async function isSignupLocked(): Promise<boolean> {
-	if (lockedCache) return true;
-	const rows = await db.select({ id: user.id }).from(user).limit(1);
-	if (rows.length > 0) {
-		lockedCache = true;
-		return true;
-	}
-	return false;
-}
-
 const handleSignupLock: Handle = async ({ event, resolve }) => {
-	if (event.url.pathname.startsWith('/api/auth/sign-up')) {
+	if (event.url.pathname.includes('/api/auth/sign-up')) {
 		if (await isSignupLocked()) {
 			return new Response(JSON.stringify({ error: 'Signup is disabled on this instance.' }), {
 				status: 403,
@@ -39,36 +25,24 @@ const handleSignupLock: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
+const tooManyRequests = () =>
+	new Response('Too many requests — please slow down.', { status: 429 });
+
 /**
- * Resolve the real client IP from request headers.
+ * Rate-limit POSTs to public booking routes and to better-auth's sign-in
+ * endpoint. Keyed by the client IP (see `clientIp` for which headers are
+ * trusted). In-memory only; a process restart flushes the buckets.
  *
- * - Behind Cloudflare: set TRUSTED_PROXY=cloudflare and use CF-Connecting-IP,
- *   which Cloudflare controls and clients cannot spoof.  X-Forwarded-For must
- *   NOT be used in that case because Cloudflare appends the real IP but the
- *   client can inject arbitrary leading values.
- * - Behind any other trusted reverse proxy (nginx, etc.): use the first value
- *   of X-Forwarded-For, which the proxy prepends.
- * - Direct access: fall back to the socket address via getClientAddress().
+ * The `/login` form action applies the same login bucket itself so it can
+ * re-render the form with a message instead of a bare 429.
  */
-function getClientIp(event: Parameters<Handle>[0]['event']): string {
-	if (TRUSTED_PROXY === 'cloudflare') {
-		const ip = event.request.headers.get('cf-connecting-ip');
-		if (ip) return ip;
-	}
-
-	return (
-		event.request.headers.get('x-forwarded-for')?.split(',')[0].trim() || event.getClientAddress()
-	);
-}
-
-/**
- * Rate-limit POSTs to public booking routes. Keyed by the client IP.
- * In-memory only; a process restart flushes the buckets.
- */
-const handlePublicRateLimit: Handle = async ({ event, resolve }) => {
-	if (event.request.method === 'POST' && event.url.pathname.startsWith('/e/')) {
-		if (!rateLimit(`e:${getClientIp(event)}`)) {
-			return new Response('Too many requests — please slow down.', { status: 429 });
+const handleRateLimit: Handle = async ({ event, resolve }) => {
+	if (event.request.method === 'POST') {
+		const ip = () => clientIp(event.request.headers, TRUSTED_PROXY, () => event.getClientAddress());
+		if (isPublicBookingRoute(event.route.id)) {
+			if (!rateLimit(`e:${ip()}`)) return tooManyRequests();
+		} else if (event.url.pathname.includes('/api/auth/sign-in')) {
+			if (!rateLimit(`login:${ip()}`, LOGIN_LIMIT)) return tooManyRequests();
 		}
 	}
 	return resolve(event);
@@ -81,6 +55,24 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
 		event.locals.user = session.user;
 	}
 	return svelteKitHandler({ event, resolve, auth, building });
+};
+
+/**
+ * Require a signed-in researcher for everything under `(admin)`.
+ *
+ * This must live in `handle`: the `(admin)/+layout.server.ts` load does not
+ * run before form actions, so on its own it leaves every admin action open
+ * to unauthenticated POSTs.
+ */
+const handleAdminGuard: Handle = async ({ event, resolve }) => {
+	if (isAdminRoute(event.route.id) && !event.locals.user) {
+		if (event.request.method === 'GET' || event.request.method === 'HEAD') {
+			const next = encodeURIComponent(event.url.pathname + event.url.search);
+			throw redirect(303, resolvePath(`login?next=${next}`));
+		}
+		throw error(401, 'You must be signed in to do that.');
+	}
+	return resolve(event);
 };
 
 /**
@@ -110,7 +102,8 @@ const handleSecurityHeaders: Handle = async ({ event, resolve }) => {
 
 export const handle: Handle = sequence(
 	handleSignupLock,
-	handlePublicRateLimit,
+	handleRateLimit,
 	handleBetterAuth,
+	handleAdminGuard,
 	handleSecurityHeaders
 );

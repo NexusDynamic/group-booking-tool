@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
 	import type { ActionData, PageData } from './$types';
 	import ExperimentNav from '#lib/components/ExperimentNav.svelte';
 	import Alert from '#lib/components/Alert.svelte';
@@ -11,10 +12,11 @@
 
 	let copied = $state<'public' | 'researcher' | null>(null);
 
+	// Absolute URLs (origin + base path) so they can be pasted into a calendar app.
 	const publicUrl: (token: string) => string = (token: string) =>
-		resolve('/ics/experiment/[token].ics', { token });
+		new URL(resolve('/ics/experiment/[token].ics', { token }), page.url.href).href;
 	const researcherUrl: (token: string) => string = (token: string) =>
-		resolve('/ics/researcher/[token].ics', { token });
+		new URL(resolve('/ics/researcher/[token].ics', { token }), page.url.href).href;
 
 	async function copy(which: 'public' | 'researcher') {
 		const url =
