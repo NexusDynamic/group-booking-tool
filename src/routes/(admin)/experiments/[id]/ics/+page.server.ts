@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getExperimentById, rotateIcsToken } from '$lib/server/experiments';
+import { getExperimentById, rotateIcsToken } from '#lib/server/experiments.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {

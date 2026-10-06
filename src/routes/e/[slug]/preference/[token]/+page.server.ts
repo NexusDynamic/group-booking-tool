@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
-import { getExperimentBySlug } from '$lib/server/experiments';
-import { findPreferenceByToken, withdrawPreferenceByToken } from '$lib/server/preferences';
-import { formatInTz } from '$lib/server/time';
+import { getExperimentBySlug } from '#lib/server/experiments.js';
+import { findPreferenceByToken, withdrawPreferenceByToken } from '#lib/server/preferences.js';
+import { formatInTz } from '#lib/server/time.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {

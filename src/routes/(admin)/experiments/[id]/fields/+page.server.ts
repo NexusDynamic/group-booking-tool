@@ -1,10 +1,10 @@
 import { error, fail } from '@sveltejs/kit';
-import { getExperimentById, updateRequiredFields } from '$lib/server/experiments';
+import { getExperimentById, updateRequiredFields } from '#lib/server/experiments.js';
 import {
 	parseRequiredFields,
 	requiredFieldsSchema,
 	type RequiredField
-} from '$lib/schemas/experiment';
+} from '#lib/schemas/experiment.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {

@@ -1,8 +1,12 @@
 import { error, fail } from '@sveltejs/kit';
-import { getExperimentById } from '$lib/server/experiments';
-import { createReminderRule, deleteReminderRule, listReminderRules } from '$lib/server/reminders';
-import { reminderRuleFormSchema } from '$lib/schemas/reminder';
-import { parseForm } from '$lib/server/validate';
+import { getExperimentById } from '#lib/server/experiments.js';
+import {
+	createReminderRule,
+	deleteReminderRule,
+	listReminderRules
+} from '#lib/server/reminders.js';
+import { reminderRuleFormSchema } from '#lib/schemas/reminder.js';
+import { parseForm } from '#lib/server/validate.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {

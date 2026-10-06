@@ -1,4 +1,4 @@
-import { env } from '$env/dynamic/private';
+import { LOG_FILE } from '$app/env/private';
 
 /**
  * Tiny logger. Writes to stdout/stderr, with optional file append if
@@ -18,10 +18,10 @@ type Level = 'debug' | 'info' | 'warn' | 'error';
 
 let fileStream: NodeJS.WritableStream | null = null;
 // Defer file stream creation to first use so tests that mock
-// `$env/dynamic/private` aren't affected on import.
+// `$app/env/private` aren't affected on import.
 function getStream(): NodeJS.WritableStream | null {
 	if (fileStream) return fileStream;
-	const path = env.LOG_FILE;
+	const path = LOG_FILE;
 	if (!path) return null;
 	// Dynamic require to avoid bundling node:fs into client code if anything
 	// ever tries to import this module from the browser.

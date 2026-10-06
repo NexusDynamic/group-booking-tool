@@ -1,8 +1,14 @@
-import { env } from '$env/dynamic/private';
+import {
+	DATA_CONTROLLER_NAME,
+	DATA_CONTROLLER_EMAIL,
+	ADMIN_EMAIL,
+	DATA_RETENTION_DAYS
+} from '$app/env/private';
+
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => ({
-	controllerName: env.DATA_CONTROLLER_NAME ?? '',
-	controllerEmail: env.DATA_CONTROLLER_EMAIL || env.ADMIN_EMAIL || '',
-	retentionDays: Number(env.DATA_RETENTION_DAYS ?? 90)
+	controllerName: DATA_CONTROLLER_NAME ?? '',
+	controllerEmail: DATA_CONTROLLER_EMAIL || ADMIN_EMAIL || '',
+	retentionDays: DATA_RETENTION_DAYS
 });

@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
-	import ExperimentNav from '$lib/components/ExperimentNav.svelte';
-	import Alert from '$lib/components/Alert.svelte';
-	import Card from '$lib/components/Card.svelte';
-	import FormField from '$lib/components/FormField.svelte';
+	import ExperimentNav from '#lib/components/ExperimentNav.svelte';
+	import Alert from '#lib/components/Alert.svelte';
+	import Card from '#lib/components/Card.svelte';
+	import FormField from '#lib/components/FormField.svelte';
 	import { resolve } from '$app/paths';
-	import { inputClass } from '$lib/styles';
+	import { inputClass } from '#lib/styles.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	let exp = $derived(data.experiment);
@@ -31,12 +31,12 @@
 </svelte:head>
 
 <a
-	href={resolve(`/experiments/${exp.id}/sessions`)}
+	href={resolve(`experiments/${exp.id}/sessions`)}
 	class="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
 	>← Sessions</a
 >
-<h1 class="mt-1 text-2xl font-semibold">{session.startsAtLabel}</h1>
 
+<h1 class="mt-1 text-2xl font-semibold">{session.startsAtLabel}</h1>
 <ExperimentNav />
 <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
 	{exp.name} ·
@@ -156,9 +156,7 @@
 				value={form?.values?.startsAtLocal ?? session.startsAtInput}
 				class={inputClass}
 			/>
-			<span class="mt-1 text-xs text-gray-500 dark:text-gray-400"
-				>Times in {data.clinicTz}</span
-			>
+			<span class="mt-1 text-xs text-gray-500 dark:text-gray-400">Times in {data.clinicTz}</span>
 		</FormField>
 		<FormField label="Duration (minutes)">
 			<input

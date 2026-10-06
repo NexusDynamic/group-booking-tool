@@ -7,10 +7,10 @@ import {
 	setPublished,
 	SlugInUseError,
 	updateExperiment
-} from '$lib/server/experiments';
-import { experimentFormSchema, parseRequiredFields } from '$lib/schemas/experiment';
-import { parseForm } from '$lib/server/validate';
-import { env } from '$env/dynamic/private';
+} from '#lib/server/experiments.js';
+import { experimentFormSchema, parseRequiredFields } from '#lib/schemas/experiment.js';
+import { parseForm } from '#lib/server/validate.js';
+import { DATA_RETENTION_DAYS } from '$app/env/private';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -19,7 +19,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	return {
 		experiment,
 		requiredFields: parseRequiredFields(experiment.requiredFields),
-		defaultRetentionDays: Number(env.DATA_RETENTION_DAYS ?? 90)
+		defaultRetentionDays: DATA_RETENTION_DAYS
 	};
 };
 
@@ -63,6 +63,6 @@ export const actions: Actions = {
 			}
 			throw err;
 		}
-		throw redirect(303, resolve('/experiments'));
+		throw redirect(303, resolve('experiments'));
 	}
 };

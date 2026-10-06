@@ -9,10 +9,7 @@
 
 	let copied: string | null = $state(null);
 	let manageUrl = $derived(page.url.href);
-
-	let httpsIcsUrl = $derived(
-		data.origin + resolve(`/ics/session/${data.session.sessionToken}.ics`)
-	);
+	let httpsIcsUrl = $derived(data.origin + resolve(`ics/session/${data.session.sessionToken}.ics`));
 	let webcalIcsUrl = $derived(httpsIcsUrl.replace(/^https?:\/\//, 'webcal://'));
 	let googleCalUrl = $derived(
 		`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalIcsUrl)}`
@@ -110,7 +107,7 @@
 				Note: a downloaded file will not update automatically if changes are made.
 			</p>
 			<a
-				href={resolve(`/ics/session/${data.session.sessionToken}.ics`)}
+				href={resolve(`ics/session/${data.session.sessionToken}.ics`)}
 				download={`booking-${data.booking.id}.ics`}
 				class="inline-block rounded-md border border-blue-300 bg-white px-3 py-2 font-mono text-sm text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700"
 			>

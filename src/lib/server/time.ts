@@ -1,17 +1,17 @@
-import { env } from '$env/dynamic/private';
+import { CLINIC_TZ as ENV_CLINIC_TZ, CLINIC_LOCALE as ENV_CLINIC_LOCALE } from '$app/env/private';
 
 /**
  * Clinic timezone used for all wall-clock display and recurrence expansion.
  * All instants in the database are stored as UTC epoch ms; this is purely a
  * presentation / wall-clock authoring concern.
  */
-export const CLINIC_TZ = env.CLINIC_TZ || 'Europe/Copenhagen';
+export const CLINIC_TZ = ENV_CLINIC_TZ || 'Europe/Copenhagen';
 
 /**
  * Locale used for all wall-clock display (formatInTz). Accepts any BCP 47
  * locale string. Defaults to da-DK (Danish).
  */
-export const CLINIC_LOCALE = env.CLINIC_LOCALE || 'da-DK';
+export const CLINIC_LOCALE = ENV_CLINIC_LOCALE || 'da-DK';
 
 /**
  * Convert an ISO-like local datetime (e.g. "2026-06-01T09:00") interpreted in

@@ -1,16 +1,16 @@
 import { error, fail } from '@sveltejs/kit';
-import { getExperimentById } from '$lib/server/experiments';
+import { getExperimentById } from '#lib/server/experiments.js';
 import {
 	createTemplate,
 	deleteTemplate,
 	listTemplates,
 	materialiseTemplate,
 	regenerateFutureSessions
-} from '$lib/server/sessions';
-import { buildWeeklyRRule } from '$lib/server/recurrence';
-import { CLINIC_TZ, formatInTz, localToUtc } from '$lib/server/time';
-import { recurrenceTemplateFormSchema } from '$lib/schemas/session';
-import { parseForm } from '$lib/server/validate';
+} from '#lib/server/sessions.js';
+import { buildWeeklyRRule } from '#lib/server/recurrence.js';
+import { CLINIC_TZ, formatInTz, localToUtc } from '#lib/server/time.js';
+import { recurrenceTemplateFormSchema } from '#lib/schemas/session.js';
+import { parseForm } from '#lib/server/validate.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {

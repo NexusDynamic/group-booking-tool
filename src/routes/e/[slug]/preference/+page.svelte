@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 	import { resolve } from '$app/paths';
-	import ParticipantFields from '$lib/components/ParticipantFields.svelte';
+	import ParticipantFields from '#lib/components/ParticipantFields.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
@@ -13,7 +13,7 @@
 
 <article class="mx-auto max-w-2xl py-10">
 	<a
-		href={resolve(`/e/${data.experiment.slug}`)}
+		href={resolve(`e/${data.experiment.slug}`)}
 		class="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
 		>← {data.experiment.name}</a
 	>
@@ -36,7 +36,7 @@
 			requiredFields={data.requiredFields}
 			values={form?.values}
 			errors={form?.errors}
-			privacyPolicyUrl={data.privacyNotice.url || '/privacy'}
+			privacyPolicyUrl={data.privacyNotice.url}
 		/>
 
 		<label class="block">

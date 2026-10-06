@@ -26,8 +26,9 @@
 		"@better-auth/cli": "~1.4.21",
 		"@eslint/compat": "^2.1.1",
 		"@eslint/js": "^10.0.1",
-		"@sveltejs/adapter-node": "^5.5.7",
-		"@sveltejs/kit": "^2.70.3",
+		"@sveltejs/adapter-node": "^6.0.0",
+		"@sveltejs/kit": "^3.0.0",
+		"@sveltejs/load-config": "^0.2.2",
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
 		"@tailwindcss/forms": "^0.5.11",
 		"@tailwindcss/typography": "^0.5.20",
@@ -64,5 +65,9 @@
 		"ics": "^3.12.1",
 		"rrule": "^2.8.1"
 	},
-	"packageManager": "pnpm@11.3.0"
+	"packageManager": "pnpm@11.3.0",
+	"imports": {
+		"#lib": "./src/lib/index.js",
+		"#lib/*": "./src/lib/*"
+	}
 }

@@ -1,12 +1,11 @@
-import type { Handle } from '@sveltejs/kit';
-import { building } from '$app/environment';
-import { sequence } from '@sveltejs/kit/hooks';
+import { building } from '$app/env';
+import { sequence, type Handle } from '@sveltejs/kit/hooks';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
-import { auth } from '$lib/server/auth';
-import { db } from '$lib/server/db';
-import { user } from '$lib/server/db/schema';
-import { rateLimit } from '$lib/server/rate-limit';
-import { env } from '$env/dynamic/private';
+import { auth } from '#lib/server/auth.js';
+import { db } from '#lib/server/db/index.js';
+import { user } from '#lib/server/db/schema.js';
+import { rateLimit } from '#lib/server/rate-limit.js';
+import { TRUSTED_PROXY } from '$app/env/private';
 
 /**
  * Lock signups once any user exists. The tool is single-researcher; the admin
@@ -52,10 +51,11 @@ const handleSignupLock: Handle = async ({ event, resolve }) => {
  * - Direct access: fall back to the socket address via getClientAddress().
  */
 function getClientIp(event: Parameters<Handle>[0]['event']): string {
-	if (env.TRUSTED_PROXY === 'cloudflare') {
+	if (TRUSTED_PROXY === 'cloudflare') {
 		const ip = event.request.headers.get('cf-connecting-ip');
 		if (ip) return ip;
 	}
+
 	return (
 		event.request.headers.get('x-forwarded-for')?.split(',')[0].trim() || event.getClientAddress()
 	);
@@ -85,7 +85,7 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
 
 /**
  * Security headers applied to every response.
- * CSP is configured in svelte.config.js so that SvelteKit can inject the
+ * CSP is configured in vite.config.ts so that SvelteKit can inject the
  * per-request nonce into script-src automatically (needed for the inline
  * FOUC-prevention script in app.html that uses %sveltekit.nonce%).
  */

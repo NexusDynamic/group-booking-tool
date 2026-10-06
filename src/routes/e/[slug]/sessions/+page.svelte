@@ -3,7 +3,7 @@
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 	import { resolve } from '$app/paths';
-	import ParticipantFields from '$lib/components/ParticipantFields.svelte';
+	import ParticipantFields from '#lib/components/ParticipantFields.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -12,6 +12,7 @@
 	let selectedSessionId = $state<string>(
 		untrack(() => (form?.sessionId as string | undefined) ?? '')
 	);
+
 	let startedAt = $state(new Date().toISOString());
 </script>
 
@@ -21,7 +22,7 @@
 
 <article class="mx-auto max-w-2xl py-10">
 	<a
-		href={resolve(`/e/${data.experiment.slug}`)}
+		href={resolve(`e/${data.experiment.slug}`)}
 		class="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
 		>← {data.experiment.name}</a
 	>
@@ -42,11 +43,12 @@
 	{:else}
 		<form method="post" action="?/book" use:enhance class="mt-6 space-y-6">
 			<fieldset>
-				<legend class="text-sm font-medium text-gray-700 dark:text-gray-300"
-					>Available sessions <span class="font-normal text-gray-400 dark:text-gray-500"
-						>({data.clinicTz})</span
-					></legend
-				>
+				<legend class="text-sm font-medium text-gray-700 dark:text-gray-300">
+					Available sessions
+
+					<span class="font-normal text-gray-400 dark:text-gray-500">({data.clinicTz})</span>
+				</legend>
+
 				<div class="mt-2 space-y-2">
 					{#each data.sessions as s (s.id)}
 						<label
@@ -88,7 +90,7 @@
 					requiredFields={data.requiredFields}
 					values={form?.values}
 					errors={form?.errors}
-					privacyPolicyUrl={data.privacyNotice.url || '/privacy'}
+					privacyPolicyUrl={data.privacyNotice.url}
 				/>
 			</fieldset>
 

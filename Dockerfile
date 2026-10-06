@@ -20,7 +20,12 @@ COPY . .
 ARG BASE_URL=""
 ENV BASE_URL=$BASE_URL
 
-# Vite/SvelteKit build does not execute drizzle.config.ts, but $env/dynamic/private
+# ORIGIN is baked into the SvelteKit build too (paths.origin, used for CSRF
+# checks behind a reverse proxy). It is still read at runtime by better-auth.
+ARG ORIGIN=""
+ENV ORIGIN=$ORIGIN
+
+# Vite/SvelteKit build does not execute drizzle.config.ts, but $app/env/private
 # is satisfied at runtime by adapter-node. Provide a placeholder so any
 # accidental import-time check doesn't abort the build.
 ENV DATABASE_URL=/tmp/build-placeholder.db

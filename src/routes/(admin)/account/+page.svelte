@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
-	import Alert from '$lib/components/Alert.svelte';
-	import FormField from '$lib/components/FormField.svelte';
-	import { inputClass } from '$lib/styles';
+	import Alert from '#lib/components/Alert.svelte';
+	import FormField from '#lib/components/FormField.svelte';
+	import { inputClass } from '#lib/styles.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>

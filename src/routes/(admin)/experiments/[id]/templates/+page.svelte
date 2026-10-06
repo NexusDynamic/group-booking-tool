@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
-	import ExperimentNav from '$lib/components/ExperimentNav.svelte';
-	import Alert from '$lib/components/Alert.svelte';
-	import Card from '$lib/components/Card.svelte';
-	import FormField from '$lib/components/FormField.svelte';
+	import ExperimentNav from '#lib/components/ExperimentNav.svelte';
+	import Alert from '#lib/components/Alert.svelte';
+	import Card from '#lib/components/Card.svelte';
+	import FormField from '#lib/components/FormField.svelte';
 	import { resolve } from '$app/paths';
-	import { inputClass } from '$lib/styles';
+	import { inputClass } from '#lib/styles.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -30,7 +30,7 @@
 </svelte:head>
 
 <a
-	href={resolve(`/experiments/${exp.id}`)}
+	href={resolve(`experiments/${exp.id}`)}
 	class="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
 	>← {exp.name}</a
 >
@@ -63,9 +63,11 @@
 			<div class="flex items-start justify-between gap-4">
 				<div>
 					<h3 class="font-medium">{t.label}</h3>
+
 					<p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
 						{prettyRrule(t.rrule)} at {t.dtstartLocal.slice(11, 16)}, {t.durationMinutes} min
 					</p>
+
 					<p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
 						Capacity {t.capacity} (min {t.minParticipants}) · window {formatWindow(
 							t.windowStartLabel,

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { RequiredField } from '$lib/schemas/experiment';
+	import type { RequiredField } from '#lib/schemas/experiment.js';
 	import { resolve } from '$app/paths';
-	import { inputClass } from '$lib/styles';
+	import { inputClass } from '#lib/styles.js';
 
 	interface Props {
 		requiredFields: RequiredField[];
@@ -10,9 +10,15 @@
 		privacyPolicyUrl?: string;
 	}
 
-	const privacyPolicyUrl = '/privacy';
+	let { requiredFields, values, errors, privacyPolicyUrl }: Props = $props();
 
-	let { requiredFields, values, errors }: Props = $props();
+	// Link to the experiment's own privacy policy when the researcher has set an
+	// absolute http(s) URL; otherwise fall back to the built-in privacy page.
+	const privacyHref = $derived(
+		privacyPolicyUrl && /^https?:\/\//i.test(privacyPolicyUrl)
+			? privacyPolicyUrl
+			: resolve('/privacy')
+	);
 </script>
 
 <label class="block">
@@ -85,8 +91,9 @@
 	/>
 	<span class="text-sm text-gray-700 dark:text-gray-300">
 		I have read and acknowledge the
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- may be an external URL -->
 		<a
-			href={resolve(privacyPolicyUrl)}
+			href={privacyHref}
 			target="_blank"
 			rel="noopener noreferrer"
 			class="underline hover:text-gray-900 dark:hover:text-gray-100">privacy notice</a

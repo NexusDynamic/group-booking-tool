@@ -1,9 +1,9 @@
 import { fail } from '@sveltejs/kit';
-import { listParticipantsWithActivity } from '$lib/server/dashboard';
-import { forceAnonymiseParticipant, runAnonymizationJob } from '$lib/server/anonymization';
-import { db } from '$lib/server/db';
-import { formatInTz } from '$lib/server/time';
-import { env } from '$env/dynamic/private';
+import { listParticipantsWithActivity } from '#lib/server/dashboard.js';
+import { forceAnonymiseParticipant, runAnonymizationJob } from '#lib/server/anonymization.js';
+import { db } from '#lib/server/db/index.js';
+import { formatInTz } from '#lib/server/time.js';
+import { DATA_RETENTION_DAYS } from '$app/env/private';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
@@ -26,7 +26,7 @@ export const actions: Actions = {
 	},
 
 	runJob: async () => {
-		const defaultRetentionDays = Number(env.DATA_RETENTION_DAYS ?? 90);
+		const defaultRetentionDays = DATA_RETENTION_DAYS;
 		const result = await runAnonymizationJob(db, { defaultRetentionDays });
 		return { jobResult: result };
 	}

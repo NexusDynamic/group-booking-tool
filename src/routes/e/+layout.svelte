@@ -1,6 +1,6 @@
 <script lang="ts">
-	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
-	import Footer from '$lib/components/Footer.svelte';
+	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
+	import Footer from '#lib/components/Footer.svelte';
 
 	let { children } = $props();
 </script>

@@ -1,14 +1,14 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { resolve } from '$app/paths';
-import { buildPrivacyNotice, getExperimentBySlug } from '$lib/server/experiments';
-import { recurringPreferenceFormSchema } from '$lib/schemas/preference';
-import { bookingSchemaFor } from '$lib/schemas/booking';
-import { parseRequiredFields } from '$lib/schemas/experiment';
-import { createRecurringPreference } from '$lib/server/preferences';
-import { buildWeeklyRRule } from '$lib/server/recurrence';
-import { parseForm } from '$lib/server/validate';
-import { localToUtc } from '$lib/server/time';
-import { env } from '$env/dynamic/private';
+import { buildPrivacyNotice, getExperimentBySlug } from '#lib/server/experiments.js';
+import { recurringPreferenceFormSchema } from '#lib/schemas/preference.js';
+import { bookingSchemaFor } from '#lib/schemas/booking.js';
+import { parseRequiredFields } from '#lib/schemas/experiment.js';
+import { createRecurringPreference } from '#lib/server/preferences.js';
+import { buildWeeklyRRule } from '#lib/server/recurrence.js';
+import { parseForm } from '#lib/server/validate.js';
+import { localToUtc } from '#lib/server/time.js';
+import { DATA_RETENTION_DAYS } from '$app/env/private';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -17,7 +17,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	return {
 		experiment: { id: experiment.id, slug: experiment.slug, name: experiment.name },
 		requiredFields: parseRequiredFields(experiment.requiredFields),
-		privacyNotice: buildPrivacyNotice(experiment, Number(env.DATA_RETENTION_DAYS ?? 90))
+		privacyNotice: buildPrivacyNotice(experiment, DATA_RETENTION_DAYS)
 	};
 };
 
@@ -80,6 +80,6 @@ export const actions: Actions = {
 			snapshotFields
 		});
 
-		throw redirect(303, resolve(`/e/${experiment.slug}/preference/${rawToken}`));
+		throw redirect(303, resolve(`e/${experiment.slug}/preference/${rawToken}`));
 	}
 };

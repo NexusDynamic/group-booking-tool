@@ -9,7 +9,7 @@
  * subsequent signups at runtime).
  *
  * This script instantiates its own minimal better-auth instance — it cannot
- * reuse `$lib/server/auth` because that module imports `$app/server` which
+ * reuse `#lib/server/auth` because that module imports `$app/server` which
  * only resolves inside a SvelteKit runtime.
  */
 import Database from 'better-sqlite3';

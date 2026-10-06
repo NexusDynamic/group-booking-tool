@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('$env/dynamic/private', () => ({
-	env: { CLINIC_TZ: 'Europe/Copenhagen', CLINIC_LOCALE: 'da-DK' }
+vi.mock('$app/env/private', async (importOriginal) => ({
+	...(await importOriginal()),
+	...{ CLINIC_TZ: 'Europe/Copenhagen', CLINIC_LOCALE: 'da-DK' }
 }));
 
 import { CLINIC_LOCALE, CLINIC_TZ, formatInTz, localToUtc, tzOffsetMs } from './time';

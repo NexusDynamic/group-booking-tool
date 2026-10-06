@@ -1,13 +1,13 @@
 import { error, fail } from '@sveltejs/kit';
-import { getExperimentById } from '$lib/server/experiments';
+import { getExperimentById } from '#lib/server/experiments.js';
 import {
 	assignPreferenceToSessions,
 	declinePreference,
 	getPreferenceById,
 	listPreferencesForExperiment,
 	suggestMatchingSessions
-} from '$lib/server/preferences';
-import { formatInTz } from '$lib/server/time';
+} from '#lib/server/preferences.js';
+import { formatInTz } from '#lib/server/time.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {

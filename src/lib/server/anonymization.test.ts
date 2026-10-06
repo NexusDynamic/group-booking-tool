@@ -42,7 +42,10 @@ import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import type Database from 'better-sqlite3';
 import type * as schema from './db/schema';
 
-vi.mock('$env/dynamic/private', () => ({ env: { DATABASE_URL: ':memory:' } }));
+vi.mock('$app/env/private', async (importOriginal) => ({
+	...(await importOriginal()),
+	...{ DATABASE_URL: ':memory:' }
+}));
 
 const { runAnonymizationJob, forceAnonymiseParticipant } = await import('./anonymization');
 

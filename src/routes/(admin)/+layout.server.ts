@@ -5,7 +5,7 @@ import { resolve } from '$app/paths';
 export const load: LayoutServerLoad = ({ locals, url }) => {
 	if (!locals.user) {
 		const next = encodeURIComponent(url.pathname + url.search);
-		throw redirect(303, resolve(`/login?next=${next}`));
+		throw redirect(303, resolve(`login?next=${next}`));
 	}
 	return { user: locals.user };
 };

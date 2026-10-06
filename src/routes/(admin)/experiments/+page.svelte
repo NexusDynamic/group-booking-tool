@@ -2,8 +2,8 @@
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 	import { resolve } from '$app/paths';
-	import FormField from '$lib/components/FormField.svelte';
-	import { inputClass } from '$lib/styles';
+	import FormField from '#lib/components/FormField.svelte';
+	import { inputClass } from '#lib/styles.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

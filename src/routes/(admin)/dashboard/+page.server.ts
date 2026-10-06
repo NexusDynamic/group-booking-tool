@@ -1,5 +1,5 @@
-import { loadDashboard } from '$lib/server/dashboard';
-import { formatInTz } from '$lib/server/time';
+import { loadDashboard } from '#lib/server/dashboard.js';
+import { formatInTz } from '#lib/server/time.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {

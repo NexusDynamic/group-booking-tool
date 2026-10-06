@@ -1,18 +1,18 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { resolve } from '$app/paths';
-import { buildPrivacyNotice, getExperimentBySlug } from '$lib/server/experiments';
-import { parseRequiredFields } from '$lib/schemas/experiment';
-import { sessionsWithCounts } from '$lib/server/sessions';
-import { bookingSchemaFor } from '$lib/schemas/booking';
+import { buildPrivacyNotice, getExperimentBySlug } from '#lib/server/experiments.js';
+import { parseRequiredFields } from '#lib/schemas/experiment.js';
+import { sessionsWithCounts } from '#lib/server/sessions.js';
+import { bookingSchemaFor } from '#lib/schemas/booking.js';
 import {
 	createBooking,
 	PriorAttendanceError,
 	SessionFullError,
 	upsertParticipant
-} from '$lib/server/bookings';
-import { hasPriorAttendance } from '$lib/server/exclusions';
-import { CLINIC_TZ, formatInTz } from '$lib/server/time';
-import { env } from '$env/dynamic/private';
+} from '#lib/server/bookings.js';
+import { hasPriorAttendance } from '#lib/server/exclusions.js';
+import { CLINIC_TZ, formatInTz } from '#lib/server/time.js';
+import { DATA_RETENTION_DAYS } from '$app/env/private';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -40,7 +40,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		},
 		sessions,
 		requiredFields: parseRequiredFields(experiment.requiredFields),
-		privacyNotice: buildPrivacyNotice(experiment, Number(env.DATA_RETENTION_DAYS ?? 90)),
+		privacyNotice: buildPrivacyNotice(experiment, DATA_RETENTION_DAYS),
 		clinicTz: CLINIC_TZ
 	};
 };
@@ -86,11 +86,8 @@ export const actions: Actions = {
 
 		// Upsert participant, check exclusion, then create booking atomically.
 		// Zod's extended dynamic schema widens the result to unknown; cast back.
-		const parsedData = result.data as {
-			name: string;
-			email: string;
-			[key: string]: unknown;
-		};
+		const parsedData = result.data as { name: string; email: string; [key: string]: unknown };
+
 		const participant = await upsertParticipant({
 			email: parsedData.email,
 			displayName: parsedData.name
@@ -124,7 +121,7 @@ export const actions: Actions = {
 				snapshotEmail: parsedData.email,
 				snapshotFields
 			});
-			throw redirect(303, resolve(`/e/${experiment.slug}/booked/${rawToken}`));
+			throw redirect(303, resolve(`e/${experiment.slug}/booked/${rawToken}`));
 		} catch (err) {
 			if (err instanceof SessionFullError) {
 				return fail(409, {

@@ -102,7 +102,9 @@ server {
 ```
 
 Set `ORIGIN=https://booking.example.org` in `.env` so better-auth scopes its
-cookies correctly and ICS feed URLs are rendered with the right base.
+cookies correctly and ICS feed URLs are rendered with the right base. `ORIGIN`
+is also baked into the build (SvelteKit's `paths.origin`, used for CSRF checks),
+so rebuild after changing it.
 
 ### Nginx via Docker
 

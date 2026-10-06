@@ -10,8 +10,9 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from './db/schema';
 import { applySchema, clearTables } from './db/test-helpers';
 
-vi.mock('$env/dynamic/private', () => ({
-	env: { DATABASE_URL: ':memory:', CLINIC_TZ: 'Europe/Copenhagen' }
+vi.mock('$app/env/private', async (importOriginal) => ({
+	...(await importOriginal()),
+	...{ DATABASE_URL: ':memory:', CLINIC_TZ: 'Europe/Copenhagen' }
 }));
 
 const client = new Database(':memory:');
@@ -67,19 +68,19 @@ describe('preferences repo', () => {
 	});
 
 	it('recurring preference matches only sessions whose time fits the rrule', async () => {
-		// Monday 2032-06-01 09:00 local Europe/Copenhagen = 07:00 UTC (CEST)
-		// Monday 2032-06-08 09:00 local = 07:00 UTC
-		// Wednesday 2032-06-03 09:00 local = 07:00 UTC (should NOT match MO rule)
-		seedSession('sess-mon1', '2032-06-01T07:00:00Z');
-		seedSession('sess-wed', '2032-06-03T07:00:00Z');
-		seedSession('sess-mon2', '2032-06-08T07:00:00Z');
+		// Monday 2032-06-07 09:00 local Europe/Copenhagen = 07:00 UTC (CEST)
+		// Monday 2032-06-14 09:00 local = 07:00 UTC
+		// Wednesday 2032-06-09 09:00 local = 07:00 UTC (should NOT match MO rule)
+		seedSession('sess-mon1', '2032-06-07T07:00:00Z');
+		seedSession('sess-wed', '2032-06-09T07:00:00Z');
+		seedSession('sess-mon2', '2032-06-14T07:00:00Z');
 
 		const { preference } = await createRecurringPreference({
 			experimentId: 'exp-1',
 			name: 'A',
 			email: 'a@b.test',
 			rrule: 'FREQ=WEEKLY;BYDAY=MO',
-			dtstartLocal: '2032-06-01T07:00',
+			dtstartLocal: '2032-06-07T09:00',
 			durationMinutes: 60,
 			windowStart: new Date('2032-06-01T00:00:00Z'),
 			windowEnd: new Date('2032-06-30T00:00:00Z'),

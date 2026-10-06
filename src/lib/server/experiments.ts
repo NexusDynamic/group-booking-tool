@@ -2,8 +2,8 @@ import { and, desc, eq, ne } from 'drizzle-orm';
 import { db } from './db';
 import { bookings, experiments, sessions } from './db/schema';
 import { generateToken } from './tokens';
-import type { ExperimentForm, RequiredField } from '$lib/schemas/experiment';
-import { requiredFieldsSchema } from '$lib/schemas/experiment';
+import type { ExperimentForm, RequiredField } from '#lib/schemas/experiment.js';
+import { requiredFieldsSchema } from '#lib/schemas/experiment.js';
 
 export type Experiment = typeof experiments.$inferSelect;
 export type NewExperiment = typeof experiments.$inferInsert;

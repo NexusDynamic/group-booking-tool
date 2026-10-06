@@ -1,14 +1,14 @@
 import { error, fail } from '@sveltejs/kit';
-import { getExperimentById } from '$lib/server/experiments';
+import { getExperimentById } from '#lib/server/experiments.js';
 import {
 	cancelSession,
 	createOneOffSession,
 	deleteSession,
 	sessionsWithCounts
-} from '$lib/server/sessions';
-import { sessionFormSchema } from '$lib/schemas/session';
-import { parseForm } from '$lib/server/validate';
-import { CLINIC_TZ, formatInTz, localToUtc } from '$lib/server/time';
+} from '#lib/server/sessions.js';
+import { sessionFormSchema } from '#lib/schemas/session.js';
+import { parseForm } from '#lib/server/validate.js';
+import { CLINIC_TZ, formatInTz, localToUtc } from '#lib/server/time.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, url }) => {
@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	if (!experiment) throw error(404, 'Experiment not found');
 	const upcomingOnly = url.searchParams.get('all') !== '1';
 	const raw = await sessionsWithCounts(experiment.id, { upcomingOnly });
-	// Format dates server-side — time.ts pulls from $env/dynamic/private so it
+	// Format dates server-side — time.ts pulls from $app/env/private so it
 	// can't be imported in client code.
 	const sessions = raw.map((s) => ({
 		...s,

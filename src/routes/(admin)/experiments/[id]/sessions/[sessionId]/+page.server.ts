@@ -1,9 +1,14 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { resolve } from '$app/paths';
-import { getExperimentById } from '$lib/server/experiments';
-import { cancelSession, deleteSession, getSessionById, updateSession } from '$lib/server/sessions';
-import { listBookingsForSession, setBookingStatus } from '$lib/server/bookings';
-import { CLINIC_TZ, formatInTz, localToUtc } from '$lib/server/time';
+import { getExperimentById } from '#lib/server/experiments.js';
+import {
+	cancelSession,
+	deleteSession,
+	getSessionById,
+	updateSession
+} from '#lib/server/sessions.js';
+import { listBookingsForSession, setBookingStatus } from '#lib/server/bookings.js';
+import { CLINIC_TZ, formatInTz, localToUtc } from '#lib/server/time.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /** Format a UTC Date as "YYYY-MM-DDTHH:mm" in CLINIC_TZ for datetime-local inputs. */
@@ -94,7 +99,7 @@ export const actions: Actions = {
 
 	delete: async ({ params }) => {
 		await deleteSession(params.sessionId);
-		throw redirect(303, resolve(`/experiments/${params.id}/sessions`));
+		throw redirect(303, resolve(`experiments/${params.id}/sessions`));
 	},
 
 	markAttended: async ({ request }) => {

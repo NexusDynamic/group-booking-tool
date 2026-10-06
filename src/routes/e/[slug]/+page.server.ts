@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
-import { getExperimentBySlug } from '$lib/server/experiments';
-import { parseRequiredFields } from '$lib/schemas/experiment';
-import { sessionsWithCounts } from '$lib/server/sessions';
-import { formatInTz } from '$lib/server/time';
+import { getExperimentBySlug } from '#lib/server/experiments.js';
+import { parseRequiredFields } from '#lib/schemas/experiment.js';
+import { sessionsWithCounts } from '#lib/server/sessions.js';
+import { formatInTz } from '#lib/server/time.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {

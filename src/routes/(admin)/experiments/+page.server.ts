@@ -1,8 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { createExperiment, listExperiments, SlugInUseError } from '$lib/server/experiments';
-import { experimentFormSchema } from '$lib/schemas/experiment';
-import { slugify } from '$lib/server/slug';
-import { parseForm } from '$lib/server/validate';
+import { createExperiment, listExperiments, SlugInUseError } from '#lib/server/experiments.js';
+import { experimentFormSchema } from '#lib/schemas/experiment.js';
+import { slugify } from '#lib/server/slug.js';
+import { parseForm } from '#lib/server/validate.js';
 import type { Actions, PageServerLoad } from './$types';
 import { resolve } from '$app/paths';
 
@@ -23,7 +23,7 @@ export const actions: Actions = {
 
 		try {
 			const exp = await createExperiment(parsed.data);
-			throw redirect(303, resolve(`/experiments/${exp.id}`));
+			throw redirect(303, resolve(`experiments/${exp.id}`));
 		} catch (err) {
 			if (err instanceof SlugInUseError) {
 				const errors: Record<string, string> = { slug: err.message };

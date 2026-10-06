@@ -1,12 +1,12 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { resolve } from '$app/paths';
 import { APIError } from 'better-auth/api';
-import { auth } from '$lib/server/auth';
+import { auth } from '#lib/server/auth.js';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = ({ locals, url }) => {
+export const load: PageServerLoad = ({ locals }) => {
 	if (locals.user) {
-		throw redirect(303, resolve('/dashboard'));
+		throw redirect(303, resolve('dashboard'));
 	}
 };
 
@@ -32,6 +32,6 @@ export const actions: Actions = {
 			return fail(500, { email, error: 'Unexpected error during sign-in.' });
 		}
 
-		throw redirect(303, resolve('/dashboard'));
+		throw redirect(303, resolve('dashboard'));
 	}
 };

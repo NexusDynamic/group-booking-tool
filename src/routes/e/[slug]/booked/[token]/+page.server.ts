@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
-import { getExperimentBySlug } from '$lib/server/experiments';
-import { getSessionById } from '$lib/server/sessions';
-import { cancelBookingByToken, findBookingByToken } from '$lib/server/bookings';
-import { formatInTz } from '$lib/server/time';
+import { getExperimentBySlug } from '#lib/server/experiments.js';
+import { getSessionById } from '#lib/server/sessions.js';
+import { cancelBookingByToken, findBookingByToken } from '#lib/server/bookings.js';
+import { formatInTz } from '#lib/server/time.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, url }) => {

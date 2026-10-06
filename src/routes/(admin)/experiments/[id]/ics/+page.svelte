@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
-	import ExperimentNav from '$lib/components/ExperimentNav.svelte';
-	import Alert from '$lib/components/Alert.svelte';
-	import Card from '$lib/components/Card.svelte';
+	import ExperimentNav from '#lib/components/ExperimentNav.svelte';
+	import Alert from '#lib/components/Alert.svelte';
+	import Card from '#lib/components/Card.svelte';
 	import { resolve } from '$app/paths';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();

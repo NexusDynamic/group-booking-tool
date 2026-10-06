@@ -4,7 +4,10 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('$env/dynamic/private', () => ({ env: { CLINIC_TZ: 'Europe/Copenhagen' } }));
+vi.mock('$app/env/private', async (importOriginal) => ({
+	...(await importOriginal()),
+	...{ CLINIC_TZ: 'Europe/Copenhagen' }
+}));
 
 const { expandTemplate, buildWeeklyRRule } = await import('./recurrence');
 const { localToUtc } = await import('./time');

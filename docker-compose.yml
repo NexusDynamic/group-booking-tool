@@ -3,9 +3,10 @@ services:
     build:
       context: .
       args:
-        # BASE_URL is baked in at build time. Change it here (or in .env) and
-        # rebuild with `docker compose build` for the new prefix to take effect.
+        # BASE_URL and ORIGIN are baked in at build time. Change them here (or
+        # in .env) and rebuild with `docker compose build` for them to take effect.
         BASE_URL: '${BASE_URL:-}'
+        ORIGIN: '${ORIGIN:-}'
     restart: unless-stopped
     volumes:
       # SQLite database file — back this directory up regularly.
@@ -36,6 +37,7 @@ services:
       context: .
       args:
         BASE_URL: '${BASE_URL:-}'
+        ORIGIN: '${ORIGIN:-}'
     restart: unless-stopped
     volumes:
       - ./data:/data

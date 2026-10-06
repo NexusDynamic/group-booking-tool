@@ -44,7 +44,7 @@
 		<p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Choose a sign-up method.</p>
 		<div class="mt-4 grid gap-3 sm:grid-cols-2">
 			<a
-				href={resolve(`/e/${exp.slug}/sessions`)}
+				href={resolve(`e/${exp.slug}/sessions`)}
 				class="rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
 			>
 				<div class="font-medium">Pick a session</div>
@@ -53,7 +53,7 @@
 				</p>
 			</a>
 			<a
-				href={resolve(`/e/${exp.slug}/multi`)}
+				href={resolve(`e/${exp.slug}/multi`)}
 				class="rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
 			>
 				<div class="font-medium">Pick several potential sessions</div>

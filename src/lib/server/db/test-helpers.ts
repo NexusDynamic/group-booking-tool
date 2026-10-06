@@ -9,7 +9,10 @@
  *
  * Usage pattern A — for modules that import `./db` internally (need vi.mock):
  *
- *   vi.mock('$env/dynamic/private', () => ({ env: { DATABASE_URL: ':memory:' } }));
+ *   vi.mock('$app/env/private', async (importOriginal) => ({
+	...(await importOriginal()),
+	...{ DATABASE_URL: ':memory:' }
+}));
  *   const client = new Database(':memory:');
  *   const memDb  = drizzle(client, { schema });
  *   vi.mock('./db', () => ({ db: memDb }));   // must be synchronous

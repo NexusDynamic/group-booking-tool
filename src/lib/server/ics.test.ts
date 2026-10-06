@@ -4,14 +4,15 @@
  *   - Researcher feed includes a reminder VEVENT iff its condition matches
  *   - below_minimum and at_capacity gates work correctly
  */
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from './db/schema';
 import { applySchema, clearTables } from './db/test-helpers';
 
-vi.mock('$env/dynamic/private', () => ({
-	env: { DATABASE_URL: ':memory:', CLINIC_TZ: 'Europe/Copenhagen', CLINIC_LOCALE: 'da-DK' }
+vi.mock('$app/env/private', async (importOriginal) => ({
+	...(await importOriginal()),
+	...{ DATABASE_URL: ':memory:', CLINIC_TZ: 'Europe/Copenhagen', CLINIC_LOCALE: 'da-DK' }
 }));
 
 const client = new Database(':memory:');
@@ -171,6 +172,16 @@ describe('buildResearcherFeed', () => {
 });
 
 describe('toLocalDateArray', () => {
+	// The feeds only include upcoming sessions, so pin "now" before the fixed
+	// dates used below.
+	beforeEach(() => {
+		vi.useFakeTimers({ toFake: ['Date'] });
+		vi.setSystemTime(new Date('2026-09-01T00:00:00Z'));
+	});
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
 	it('extracts wall-clock components in CLINIC_TZ for a summer UTC instant', () => {
 		// 2026-06-15 07:00 UTC = 09:00 Copenhagen summer (CEST, UTC+2)
 		const d = new Date('2026-06-15T07:00:00Z');

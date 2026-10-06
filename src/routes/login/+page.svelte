@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import type { ActionData, PageData } from './$types';
-	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
-	import Footer from '$lib/components/Footer.svelte';
+	import type { ActionData } from './$types';
+	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
+	import Footer from '#lib/components/Footer.svelte';
 
 	let { form }: { form: ActionData } = $props();
 </script>
