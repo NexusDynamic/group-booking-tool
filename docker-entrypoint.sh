@@ -5,7 +5,23 @@ set -e
 # Works for both absolute paths (/data/booking.db) and relative names (local.db).
 DB_DIR=$(dirname "$DATABASE_URL")
 if [ "$DB_DIR" != "." ]; then
-  mkdir -p "$DB_DIR"
+  mkdir -p "$DB_DIR" 2>/dev/null || true
+fi
+
+# The container runs as an unprivileged user. Fail early, with the fix, if the
+# database location (typically a bind-mounted host directory) is not writable
+# — SQLite also needs to create its -wal / -shm files next to the database.
+for target in "$DB_DIR" "$DATABASE_URL" "$DATABASE_URL-wal" "$DATABASE_URL-shm"; do
+  if [ -e "$target" ] && [ ! -w "$target" ]; then
+    echo "[entrypoint] ERROR: $target is not writable by uid $(id -u) (gid $(id -g))." >&2
+    echo "[entrypoint] The container no longer runs as root. On the host, run:" >&2
+    echo "[entrypoint]   sudo chown -R $(id -u):$(id -g) ./data" >&2
+    exit 1
+  fi
+done
+if [ ! -d "$DB_DIR" ]; then
+  echo "[entrypoint] ERROR: database directory $DB_DIR does not exist and could not be created." >&2
+  exit 1
 fi
 
 # Apply the current schema to the database (idempotent — safe on every start).

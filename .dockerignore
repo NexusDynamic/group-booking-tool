@@ -1,0 +1,14 @@
+# Keep host artefacts and secrets out of the build context. Dependencies are
+# installed inside the image, and configuration is supplied at runtime.
+.git
+node_modules
+build
+.svelte-kit
+data
+.env
+.env.*
+!.env.example
+*.db
+*.db-shm
+*.db-wal
+*.log

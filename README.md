@@ -68,6 +68,32 @@ An nginx reverse-proxy service is included as an optional Compose profile (see
 [Nginx via Docker](#nginx-via-docker) below). If you already run nginx on the
 host, skip the profile and proxy directly to `127.0.0.1:3000` instead.
 
+#### Running as a non-root user
+
+The app and anonymize containers run as the unprivileged `node` user
+(uid/gid 1000), with all Linux capabilities dropped. The only thing they write
+is the database directory, so `./data` on the host must belong to that uid:
+
+```sh
+mkdir -p data
+sudo chown -R 1000:1000 data
+```
+
+If it isn't writable the app container exits at startup with a message saying
+so. If you set `LOG_FILE`, point it somewhere under `/data` as well.
+
+**Upgrading an instance that used to run as root** — the existing database
+files are owned by root, so fix the ownership once while the stack is down:
+
+```sh
+docker compose down
+cp -a data data.bak                    # backup, including any -wal / -shm files
+sudo chown -R 1000:1000 data
+docker compose build
+docker compose up -d
+docker compose logs -f app             # should reach "Starting Group Booking Tool"
+```
+
 ### Nginx on the host
 
 If you already run nginx on the host (e.g. managing multiple sites on a VPS),

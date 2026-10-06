@@ -8,8 +8,12 @@ services:
         BASE_URL: '${BASE_URL:-}'
         ORIGIN: '${ORIGIN:-}'
     restart: unless-stopped
+    # Runs as the unprivileged `node` user (uid 1000) with no extra privileges.
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
     volumes:
       # SQLite database file — back this directory up regularly.
+      # Must be writable by uid 1000: `sudo chown -R 1000:1000 ./data`.
       - ./data:/data
     env_file: .env
     environment:
@@ -32,7 +36,7 @@ services:
       - '127.0.0.1:${APP_PORT:-3000}:${APP_PORT:-3000}'
 
   # Daily GDPR anonymisation job.
-  # Runs pnpm anonymize at 02:00 UTC every day using the same image and data
+  # Runs the anonymisation sweep at 02:00 UTC every day using the same image and data
   # volume as the app service. Waits for the app to be healthy first so the
   # schema is always applied before the first sweep.
   anonymize:
@@ -42,6 +46,8 @@ services:
         BASE_URL: '${BASE_URL:-}'
         ORIGIN: '${ORIGIN:-}'
     restart: unless-stopped
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
     volumes:
       - ./data:/data
     env_file: .env
