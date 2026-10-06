@@ -64,7 +64,7 @@
 		"ics": "^3.12.1",
 		"rrule": "^2.8.1"
 	},
-	"packageManager": "pnpm@11.3.0",
+	"packageManager": "pnpm@12.9.1",
 	"engines": {
 		"node": ">=22"
 	},

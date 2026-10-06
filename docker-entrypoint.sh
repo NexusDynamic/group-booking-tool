@@ -14,8 +14,9 @@ fi
 for target in "$DB_DIR" "$DATABASE_URL" "$DATABASE_URL-wal" "$DATABASE_URL-shm"; do
   if [ -e "$target" ] && [ ! -w "$target" ]; then
     echo "[entrypoint] ERROR: $target is not writable by uid $(id -u) (gid $(id -g))." >&2
-    echo "[entrypoint] The container no longer runs as root. On the host, run:" >&2
+    echo "[entrypoint] The container does not run as root. On the host, either run:" >&2
     echo "[entrypoint]   sudo chown -R $(id -u):$(id -g) ./data" >&2
+    echo "[entrypoint] or set APP_UID / APP_GID in .env to the owner of ./data." >&2
     exit 1
   fi
 done

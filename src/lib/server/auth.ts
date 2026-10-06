@@ -2,6 +2,7 @@ import { betterAuth } from 'better-auth/minimal';
 import { APIError } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
+import { building } from '$app/env';
 import { ORIGIN, BETTER_AUTH_SECRET } from '$app/env/private';
 import { getRequestEvent } from '$app/server';
 import { db } from '#lib/server/db/index.js';
@@ -27,9 +28,18 @@ export async function isSignupLocked(): Promise<boolean> {
 	return false;
 }
 
+/**
+ * `vite build` imports this module while analysing routes, and better-auth
+ * refuses to initialise in production without a secret. No request is ever
+ * served by that build-time instance, so give it a throwaway value — this
+ * keeps the real secret (and `.env`) out of the Docker build entirely. The
+ * running server always reads BETTER_AUTH_SECRET from its environment.
+ */
+const BUILD_ONLY_SECRET = 'build-time-placeholder-never-used-to-sign-anything';
+
 export const auth = betterAuth({
 	baseURL: ORIGIN,
-	secret: BETTER_AUTH_SECRET,
+	secret: building ? BUILD_ONLY_SECRET : BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: 'sqlite' }),
 	emailAndPassword: { enabled: true },
 	databaseHooks: {

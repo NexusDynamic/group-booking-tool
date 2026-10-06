@@ -70,25 +70,43 @@ host, skip the profile and proxy directly to `127.0.0.1:3000` instead.
 
 #### Running as a non-root user
 
-The app and anonymize containers run as the unprivileged `node` user
-(uid/gid 1000), with all Linux capabilities dropped. The only thing they write
-is the database directory, so `./data` on the host must belong to that uid:
+The app and anonymize containers run unprivileged, with all Linux capabilities
+dropped. The only thing they write is the database directory, so `./data` on
+the host must be owned by the uid the containers run as.
+
+That uid is `APP_UID` / `APP_GID` in `.env`, defaulting to `1000:1000`. On many
+hosts uid 1000 is the first human account, so the files would show up as
+belonging to that person. To avoid that, create a dedicated service account
+and use its ids instead:
+
+```sh
+sudo useradd --system --no-create-home --shell /usr/sbin/nologin booking
+id booking                             # note the uid= and gid= values
+```
+
+```sh
+# .env
+APP_UID=<uid>
+APP_GID=<gid>
+```
 
 ```sh
 mkdir -p data
-sudo chown -R 1000:1000 data
+sudo chown -R booking:booking data
 ```
 
-If it isn't writable the app container exits at startup with a message saying
-so. If you set `LOG_FILE`, point it somewhere under `/data` as well.
+Only the numeric ids matter to Docker; the account just gives them a name on
+the host. If `./data` isn't writable the app container exits at startup with a
+message saying which uid needs access. If you set `LOG_FILE`, point it
+somewhere under `/data` as well.
 
 **Upgrading an instance that used to run as root** — the existing database
 files are owned by root, so fix the ownership once while the stack is down:
 
 ```sh
 docker compose down
-cp -a data data.bak                    # backup, including any -wal / -shm files
-sudo chown -R 1000:1000 data
+sudo cp -a data data.bak               # backup, including any -wal / -shm files
+sudo chown -R <uid>:<gid> data         # the APP_UID / APP_GID from .env
 docker compose build
 docker compose up -d
 docker compose logs -f app             # should reach "Starting Group Booking Tool"

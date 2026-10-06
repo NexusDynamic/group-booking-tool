@@ -65,8 +65,9 @@ ARG BASE_URL=""
 ENV BASE_URL=$BASE_URL
 
 # Run as the unprivileged `node` user (uid/gid 1000) that ships with the base
-# image. The application files stay root-owned and read-only to it; the only
-# place it writes is the database directory. /data is created here so a named
+# image; docker-compose.yml can override the uid:gid via APP_UID / APP_GID.
+# The application files stay root-owned and read-only to it; the only place
+# it writes is the database directory. /data is created here so a named
 # volume inherits the right ownership — a bind mount must be chown'd on the
 # host (see README, "Running as a non-root user").
 RUN mkdir -p /data && chown node:node /data

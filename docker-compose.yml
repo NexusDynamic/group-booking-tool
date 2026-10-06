@@ -8,12 +8,15 @@ services:
         BASE_URL: '${BASE_URL:-}'
         ORIGIN: '${ORIGIN:-}'
     restart: unless-stopped
-    # Runs as the unprivileged `node` user (uid 1000) with no extra privileges.
+    # Runs unprivileged, with no extra capabilities. APP_UID / APP_GID (in
+    # .env) choose which host uid:gid the process runs as and therefore who
+    # must own ./data; they default to 1000:1000, the image's `node` user.
+    user: '${APP_UID:-1000}:${APP_GID:-1000}'
     cap_drop: [ALL]
     security_opt: ['no-new-privileges:true']
     volumes:
       # SQLite database file — back this directory up regularly.
-      # Must be writable by uid 1000: `sudo chown -R 1000:1000 ./data`.
+      # Must be writable by APP_UID: `sudo chown -R <uid>:<gid> ./data`.
       - ./data:/data
     env_file: .env
     environment:
@@ -23,6 +26,8 @@ services:
       # The app port is bound to loopback, so requests arrive via a reverse
       # proxy. Set TRUSTED_PROXY=cloudflare in .env when behind Cloudflare.
       TRUSTED_PROXY: '${TRUSTED_PROXY:-proxy}'
+      # A custom APP_UID has no home directory inside the image.
+      HOME: /tmp
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO /dev/null http://localhost:${PORT:-3000}${BASE_URL:-}/login']
       interval: 30s
@@ -46,6 +51,7 @@ services:
         BASE_URL: '${BASE_URL:-}'
         ORIGIN: '${ORIGIN:-}'
     restart: unless-stopped
+    user: '${APP_UID:-1000}:${APP_GID:-1000}'
     cap_drop: [ALL]
     security_opt: ['no-new-privileges:true']
     volumes:
@@ -53,6 +59,8 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: /data/booking.db
+      # A custom APP_UID has no home directory inside the image.
+      HOME: /tmp
     entrypoint: ['./docker-anonymize.sh']
     depends_on:
       app:
