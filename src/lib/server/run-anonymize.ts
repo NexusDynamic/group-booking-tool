@@ -8,17 +8,10 @@
  *   DATABASE_URL          — path to the SQLite file (required)
  *   DATA_RETENTION_DAYS   — global fallback retention window in days (default 90)
  */
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import * as schema from './db/schema.ts';
+import { openCliDb } from './db/cli.ts';
 import { runAnonymizationJob } from './anonymization.ts';
 
-const { DATABASE_URL, DATA_RETENTION_DAYS } = process.env;
-
-if (!DATABASE_URL) {
-	console.error('[anonymize] DATABASE_URL is not set. Edit .env and try again.');
-	process.exit(1);
-}
+const { DATA_RETENTION_DAYS } = process.env;
 
 const defaultRetentionDays = DATA_RETENTION_DAYS ? parseInt(DATA_RETENTION_DAYS, 10) : 90;
 if (!Number.isFinite(defaultRetentionDays) || defaultRetentionDays < 1) {
@@ -28,8 +21,7 @@ if (!Number.isFinite(defaultRetentionDays) || defaultRetentionDays < 1) {
 	process.exit(1);
 }
 
-const client = new Database(DATABASE_URL);
-const db = drizzle(client, { schema });
+const { client, db } = openCliDb('anonymize');
 
 console.log(
 	`[anonymize] Running anonymisation sweep (default retention: ${defaultRetentionDays} days)…`

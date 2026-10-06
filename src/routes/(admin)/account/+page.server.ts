@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import { auth } from '#lib/server/auth.js';
+import { zodErrors } from '#lib/server/validate.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals }) => {
@@ -27,14 +28,7 @@ export const actions: Actions = {
 			confirmPassword: String(formData.get('confirmPassword') ?? '')
 		};
 		const parsed = changePasswordSchema.safeParse(values);
-		if (!parsed.success) {
-			const errors: Record<string, string> = {};
-			for (const issue of parsed.error.issues) {
-				const path = issue.path.join('.') || '_';
-				if (!errors[path]) errors[path] = issue.message;
-			}
-			return fail(400, { errors });
-		}
+		if (!parsed.success) return fail(400, { errors: zodErrors(parsed.error) });
 
 		try {
 			await auth.api.changePassword({

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { asBool, durationMinutes, MIN_ABOVE_MAX_ISSUE, participantCount } from './common';
 
 /**
  * Required-field definition for participant signup forms.
@@ -22,10 +23,6 @@ export const requiredFieldsSchema = z.array(requiredFieldSchema).max(20);
  * Form schema for creating/updating an experiment.
  * All fields arrive as strings from FormData; coerce where needed.
  */
-const asBool = z
-	.union([z.literal('on'), z.literal('true'), z.literal(''), z.undefined()])
-	.transform((v) => v === 'on' || v === 'true');
-
 export const experimentFormSchema = z
 	.object({
 		name: z.string().trim().min(1, 'Name is required').max(200),
@@ -38,15 +35,11 @@ export const experimentFormSchema = z
 		description: z.string().max(5000).default(''),
 		experimenterName: z.string().max(100).default('Experimenter'),
 		experimenterEmail: z.email().max(100).default('experimenter@example.com'),
-		durationMinutes: z.coerce
-			.number()
-			.int()
-			.min(1)
-			.max(24 * 60),
+		durationMinutes,
 		inclusionCriteria: z.string().max(5000).default(''),
 		exclusionCriteria: z.string().max(5000).default(''),
-		minParticipants: z.coerce.number().int().min(1).max(1000),
-		maxParticipants: z.coerce.number().int().min(1).max(1000),
+		minParticipants: participantCount,
+		maxParticipants: participantCount,
 		location: z.string().max(1000).default(''),
 		notes: z.string().max(5000).default(''),
 		excludePriorAttendees: asBool,
@@ -77,10 +70,7 @@ export const experimentFormSchema = z
 		// Optional URL to a full privacy policy page.
 		privacyNoticeUrl: z.string().max(500).default('')
 	})
-	.refine((v) => v.minParticipants <= v.maxParticipants, {
-		message: 'Minimum cannot exceed the maximum',
-		path: ['minParticipants']
-	});
+	.refine((v) => v.minParticipants <= v.maxParticipants, MIN_ABOVE_MAX_ISSUE);
 export type ExperimentForm = z.infer<typeof experimentFormSchema>;
 
 /** Parse the required_fields JSON blob from the DB. Tolerant of bad data. */

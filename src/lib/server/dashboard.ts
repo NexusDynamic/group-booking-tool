@@ -2,6 +2,7 @@ import { and, asc, desc, eq, gte, inArray } from 'drizzle-orm';
 import { db } from './db';
 import { bookingPreferences, bookings, experiments, participants, sessions } from './db/schema';
 import { OPEN_SESSION_STATUSES } from './session-status';
+import { confirmedCounts } from './sessions';
 
 /**
  * Dashboard stats + upcoming activity feed. Shape is tailored for the
@@ -52,23 +53,7 @@ export async function loadDashboard(opts: { upcomingLimit?: number } = {}): Prom
 		.where(and(gte(sessions.startsAt, now), inArray(sessions.status, [...OPEN_SESSION_STATUSES])))
 		.orderBy(asc(sessions.startsAt));
 
-	const countsBySession = new Map<string, number>();
-	if (sessionRows.length > 0) {
-		const bookingRows = await db
-			.select({ sessionId: bookings.sessionId, status: bookings.status })
-			.from(bookings)
-			.where(
-				inArray(
-					bookings.sessionId,
-					sessionRows.map((s) => s.id)
-				)
-			);
-		for (const b of bookingRows) {
-			if (b.status === 'confirmed') {
-				countsBySession.set(b.sessionId, (countsBySession.get(b.sessionId) ?? 0) + 1);
-			}
-		}
-	}
+	const countsBySession = await confirmedCounts(sessionRows.map((s) => s.id));
 
 	const enriched: UpcomingSessionRow[] = sessionRows.flatMap((s) => {
 		const exp = expById.get(s.experimentId);

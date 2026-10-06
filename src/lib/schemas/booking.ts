@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { honeypot } from './common';
 import type { RequiredField } from './experiment';
 
 /**
@@ -12,7 +13,7 @@ import type { RequiredField } from './experiment';
 export const baseBookingSchema = z.object({
 	name: z.string().trim().min(1, 'Name is required').max(200),
 	email: z.string().trim().email('Invalid email').max(320),
-	honeypot: z.string().max(0).optional().or(z.literal('')),
+	honeypot,
 	startedAt: z.string().optional()
 });
 export type BaseBooking = z.infer<typeof baseBookingSchema>;

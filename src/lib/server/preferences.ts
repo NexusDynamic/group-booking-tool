@@ -37,6 +37,43 @@ export interface PreferenceCreateResult {
 }
 
 /**
+ * Shared insert for both preference kinds: registers the participant,
+ * snapshots their details, and mints the self-manage token.
+ */
+async function insertPreference(
+	input: {
+		experimentId: string;
+		name: string;
+		email: string;
+		notes: string;
+		snapshotFields?: Record<string, unknown>;
+	},
+	kindColumns: Pick<
+		typeof bookingPreferences.$inferInsert,
+		'kind' | 'rrule' | 'dtstartLocal' | 'durationMinutes' | 'windowStart' | 'windowEnd'
+	> & { preferredSessionIds?: string }
+): Promise<PreferenceCreateResult> {
+	const participant = await upsertParticipant({ email: input.email, displayName: input.name });
+	const rawToken = generateToken();
+
+	const [preference] = await db
+		.insert(bookingPreferences)
+		.values({
+			experimentId: input.experimentId,
+			participantId: participant.id,
+			snapshotName: input.name,
+			snapshotEmail: input.email,
+			snapshotFields: JSON.stringify(input.snapshotFields ?? {}),
+			notes: input.notes,
+			manageTokenHash: hashToken(rawToken),
+			...kindColumns
+		})
+		.returning();
+
+	return { preference, rawToken };
+}
+
+/**
  * Create a "standing availability" preference. The researcher triages these
  * from the admin preferences page and explicitly assigns them to concrete
  * sessions — we never auto-book.
@@ -44,55 +81,23 @@ export interface PreferenceCreateResult {
 export async function createRecurringPreference(
 	input: CreateRecurringPreferenceInput
 ): Promise<PreferenceCreateResult> {
-	const participant = await upsertParticipant({ email: input.email, displayName: input.name });
-	const rawToken = generateToken();
-	const manageTokenHash = hashToken(rawToken);
-
-	const [preference] = await db
-		.insert(bookingPreferences)
-		.values({
-			experimentId: input.experimentId,
-			participantId: participant.id,
-			snapshotName: input.name,
-			snapshotEmail: input.email,
-			snapshotFields: JSON.stringify(input.snapshotFields ?? {}),
-			kind: 'recurring',
-			notes: input.notes,
-			rrule: input.rrule,
-			dtstartLocal: input.dtstartLocal,
-			durationMinutes: input.durationMinutes,
-			windowStart: input.windowStart ?? null,
-			windowEnd: input.windowEnd ?? null,
-			manageTokenHash
-		})
-		.returning();
-
-	return { preference, rawToken };
+	return insertPreference(input, {
+		kind: 'recurring',
+		rrule: input.rrule,
+		dtstartLocal: input.dtstartLocal,
+		durationMinutes: input.durationMinutes,
+		windowStart: input.windowStart ?? null,
+		windowEnd: input.windowEnd ?? null
+	});
 }
 
 export async function createSessionListPreference(
 	input: CreateSessionListPreferenceInput
 ): Promise<PreferenceCreateResult> {
-	const participant = await upsertParticipant({ email: input.email, displayName: input.name });
-	const rawToken = generateToken();
-	const manageTokenHash = hashToken(rawToken);
-
-	const [preference] = await db
-		.insert(bookingPreferences)
-		.values({
-			experimentId: input.experimentId,
-			participantId: participant.id,
-			snapshotName: input.name,
-			snapshotEmail: input.email,
-			snapshotFields: JSON.stringify(input.snapshotFields ?? {}),
-			kind: 'session_list',
-			notes: input.notes,
-			preferredSessionIds: JSON.stringify(input.sessionIds),
-			manageTokenHash
-		})
-		.returning();
-
-	return { preference, rawToken };
+	return insertPreference(input, {
+		kind: 'session_list',
+		preferredSessionIds: JSON.stringify(input.sessionIds)
+	});
 }
 
 export async function listPreferencesForExperiment(

@@ -2,7 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { createExperiment, listExperiments, SlugInUseError } from '#lib/server/experiments.js';
 import { experimentFormSchema } from '#lib/schemas/experiment.js';
 import { slugify } from '#lib/server/slug.js';
-import { parseForm } from '#lib/server/validate.js';
+import { formValues, parseForm } from '#lib/server/validate.js';
 import type { Actions, PageServerLoad } from './$types';
 import { resolve } from '$app/paths';
 
@@ -27,11 +27,7 @@ export const actions: Actions = {
 		} catch (err) {
 			if (err instanceof SlugInUseError) {
 				const errors: Record<string, string> = { slug: err.message };
-				const values: Record<string, string> = {};
-				for (const [k, v] of formData.entries()) {
-					if (typeof v === 'string') values[k] = v;
-				}
-				return fail(400, { errors, values });
+				return fail(400, { errors, values: formValues(formData) });
 			}
 			throw err;
 		}

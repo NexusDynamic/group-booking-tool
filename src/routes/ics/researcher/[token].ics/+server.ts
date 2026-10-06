@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { db } from '#lib/server/db/index.js';
 import { experiments } from '#lib/server/db/schema.js';
-import { buildResearcherFeed } from '#lib/server/ics.js';
+import { buildResearcherFeed, icsResponse } from '#lib/server/ics.js';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params, url }) => {
@@ -14,10 +14,5 @@ export const GET: RequestHandler = async ({ params, url }) => {
 	if (!exp) throw error(404, 'Feed not found');
 
 	const body = await buildResearcherFeed(exp.id, { host: url.host });
-	return new Response(body, {
-		headers: {
-			'content-type': 'text/calendar; charset=utf-8',
-			'cache-control': 'private, max-age=60'
-		}
-	});
+	return icsResponse(body, 'private');
 };

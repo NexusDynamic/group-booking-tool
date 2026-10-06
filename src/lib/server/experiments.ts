@@ -29,31 +29,38 @@ export class SlugInUseError extends Error {
 	}
 }
 
+/** Map the validated form onto the editable `experiments` columns. */
+function formToColumns(input: ExperimentForm) {
+	return {
+		slug: input.slug,
+		name: input.name,
+		description: input.description,
+		durationMinutes: input.durationMinutes,
+		inclusionCriteria: input.inclusionCriteria,
+		exclusionCriteria: input.exclusionCriteria,
+		minParticipants: input.minParticipants,
+		maxParticipants: input.maxParticipants,
+		excludePriorAttendees: input.excludePriorAttendees,
+		experimenterName: input.experimenterName,
+		experimenterEmail: input.experimenterEmail,
+		location: input.location,
+		notes: input.notes,
+		dataRetentionDays: input.dataRetentionDays ?? null,
+		endDate: input.endDate ? new Date(input.endDate) : null,
+		privacyNoticeText: input.privacyNoticeText,
+		privacyNoticeUrl: input.privacyNoticeUrl
+	};
+}
+
 export async function createExperiment(input: ExperimentForm): Promise<Experiment> {
 	const conflict = await getExperimentBySlug(input.slug);
 	if (conflict) throw new SlugInUseError(input.slug);
 	const [row] = await db
 		.insert(experiments)
 		.values({
-			slug: input.slug,
-			name: input.name,
-			description: input.description,
-			durationMinutes: input.durationMinutes,
-			inclusionCriteria: input.inclusionCriteria,
-			exclusionCriteria: input.exclusionCriteria,
-			minParticipants: input.minParticipants,
-			maxParticipants: input.maxParticipants,
-			excludePriorAttendees: input.excludePriorAttendees,
+			...formToColumns(input),
 			publicIcsToken: generateToken(),
-			researcherIcsToken: generateToken(),
-			experimenterName: input.experimenterName,
-			experimenterEmail: input.experimenterEmail,
-			location: input.location,
-			notes: input.notes,
-			dataRetentionDays: input.dataRetentionDays ?? null,
-			endDate: input.endDate ? new Date(input.endDate) : null,
-			privacyNoticeText: input.privacyNoticeText,
-			privacyNoticeUrl: input.privacyNoticeUrl
+			researcherIcsToken: generateToken()
 		})
 		.returning();
 	return row;
@@ -71,26 +78,7 @@ export async function updateExperiment(
 	if (conflict.length > 0) throw new SlugInUseError(input.slug);
 	const [row] = await db
 		.update(experiments)
-		.set({
-			slug: input.slug,
-			name: input.name,
-			description: input.description,
-			durationMinutes: input.durationMinutes,
-			inclusionCriteria: input.inclusionCriteria,
-			exclusionCriteria: input.exclusionCriteria,
-			minParticipants: input.minParticipants,
-			maxParticipants: input.maxParticipants,
-			excludePriorAttendees: input.excludePriorAttendees,
-			experimenterName: input.experimenterName,
-			experimenterEmail: input.experimenterEmail,
-			location: input.location,
-			notes: input.notes,
-			dataRetentionDays: input.dataRetentionDays ?? null,
-			endDate: input.endDate ? new Date(input.endDate) : null,
-			privacyNoticeText: input.privacyNoticeText,
-			privacyNoticeUrl: input.privacyNoticeUrl,
-			updatedAt: new Date()
-		})
+		.set({ ...formToColumns(input), updatedAt: new Date() })
 		.where(eq(experiments.id, id))
 		.returning();
 	return row;

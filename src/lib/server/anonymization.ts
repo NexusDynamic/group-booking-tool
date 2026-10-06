@@ -38,6 +38,33 @@ type Db = BetterSQLite3Database<any>;
 const ANON = '<anonymized>' as const;
 const MS_PER_DAY = 86_400_000;
 
+/** Column values that strip the PII snapshot from a booking or preference. */
+function scrubbedSnapshot() {
+	const now = new Date();
+	return {
+		snapshotName: ANON,
+		snapshotEmail: ANON,
+		snapshotFields: '{}',
+		anonymisedAt: now,
+		updatedAt: now
+	};
+}
+
+/**
+ * Anonymise the participant row itself. The email becomes
+ * '<anonymized:{id}>' so the unique constraint on emailNormalised holds.
+ */
+async function scrubParticipant(db: Db, participantId: string): Promise<void> {
+	await db
+		.update(participants)
+		.set({
+			emailNormalised: `<anonymized:${participantId}>`,
+			displayName: null,
+			anonymisedAt: new Date()
+		})
+		.where(eq(participants.id, participantId));
+}
+
 export interface AnonymizationResult {
 	bookingsAnonymised: number;
 	preferencesAnonymised: number;
@@ -85,16 +112,7 @@ export async function runAnonymizationJob(
 		.map((r) => r.bookingId);
 
 	if (bookingIds.length > 0) {
-		await db
-			.update(bookings)
-			.set({
-				snapshotName: ANON,
-				snapshotEmail: ANON,
-				snapshotFields: '{}',
-				anonymisedAt: new Date(),
-				updatedAt: new Date()
-			})
-			.where(inArray(bookings.id, bookingIds));
+		await db.update(bookings).set(scrubbedSnapshot()).where(inArray(bookings.id, bookingIds));
 	}
 
 	// ── 2. Preferences ────────────────────────────────────────────────────────
@@ -123,13 +141,7 @@ export async function runAnonymizationJob(
 	if (prefIds.length > 0) {
 		await db
 			.update(bookingPreferences)
-			.set({
-				snapshotName: ANON,
-				snapshotEmail: ANON,
-				snapshotFields: '{}',
-				anonymisedAt: new Date(),
-				updatedAt: new Date()
-			})
+			.set(scrubbedSnapshot())
 			.where(inArray(bookingPreferences.id, prefIds));
 	}
 
@@ -184,14 +196,7 @@ export async function runAnonymizationJob(
 	// Update one-by-one so each gets its own unique '<anonymized:{id}>' email
 	// (required to preserve the unique constraint on emailNormalised).
 	for (const pid of participantIds) {
-		await db
-			.update(participants)
-			.set({
-				emailNormalised: `<anonymized:${pid}>`,
-				displayName: null,
-				anonymisedAt: new Date()
-			})
-			.where(eq(participants.id, pid));
+		await scrubParticipant(db, pid);
 	}
 
 	// ── 4. Expired better-auth sessions ──────────────────────────────────────
@@ -223,24 +228,12 @@ export async function runAnonymizationJob(
 export async function forceAnonymiseParticipant(db: Db, participantId: string): Promise<void> {
 	await db
 		.update(bookings)
-		.set({
-			snapshotName: ANON,
-			snapshotEmail: ANON,
-			snapshotFields: '{}',
-			anonymisedAt: new Date(),
-			updatedAt: new Date()
-		})
+		.set(scrubbedSnapshot())
 		.where(and(eq(bookings.participantId, participantId), isNull(bookings.anonymisedAt)));
 
 	await db
 		.update(bookingPreferences)
-		.set({
-			snapshotName: ANON,
-			snapshotEmail: ANON,
-			snapshotFields: '{}',
-			anonymisedAt: new Date(),
-			updatedAt: new Date()
-		})
+		.set(scrubbedSnapshot())
 		.where(
 			and(
 				eq(bookingPreferences.participantId, participantId),
@@ -248,12 +241,5 @@ export async function forceAnonymiseParticipant(db: Db, participantId: string): 
 			)
 		);
 
-	await db
-		.update(participants)
-		.set({
-			emailNormalised: `<anonymized:${participantId}>`,
-			displayName: null,
-			anonymisedAt: new Date()
-		})
-		.where(eq(participants.id, participantId));
+	await scrubParticipant(db, participantId);
 }

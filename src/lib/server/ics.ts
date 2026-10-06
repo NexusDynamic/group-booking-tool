@@ -1,9 +1,10 @@
 import { createEvents, type EventAttributes, type DateArray } from 'ics';
-import { and, asc, eq, gte, inArray } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, isNull } from 'drizzle-orm';
 import { db } from './db';
 import { bookings, experiments, reminderRules, sessions } from './db/schema';
 import { isOpenStatus } from './session-status';
-import { CLINIC_TZ } from './time';
+import { confirmedCounts } from './sessions';
+import { CLINIC_TZ, tzParts } from './time';
 
 /**
  * ICS feed generation.
@@ -62,32 +63,6 @@ function parseFormValues(raw: string): Record<string, string> {
 	return {};
 }
 
-function buildCalendarEvent(
-	eventAttrs: EventAttributes,
-	id: string,
-	host: string,
-	adminEmail: string,
-	adminDisplayName: string | undefined
-): EventAttributes {
-	return {
-		...eventAttrs,
-		organizer: {
-			name: adminDisplayName ?? 'Experiment Organizer',
-			email: adminEmail
-		},
-		attendees: [
-			{
-				name: adminDisplayName ?? 'Experiment Organizer',
-				email: adminEmail,
-				rsvp: true,
-				role: 'CHAIR',
-				partstat: 'ACCEPTED'
-			},
-			...(eventAttrs.attendees ?? [])
-		]
-	};
-}
-
 function sessionStatusToIcsStatus(status: string): 'CONFIRMED' | 'CANCELLED' | 'TENTATIVE' {
 	switch (status) {
 		case 'scheduled':
@@ -116,7 +91,7 @@ async function loadFeedData(
 	experimentId: string,
 	opts: IcsOpts,
 	includeParticipants = false
-): Promise<{ experiment: typeof experiments.$inferSelect; sessions: SessionRow[] }> {
+): Promise<{ experiment: Experiment; sessions: SessionRow[] }> {
 	const lookaheadDays = opts.lookaheadDays ?? 365;
 	const cutoff = new Date(Date.now() + lookaheadDays * 24 * 60 * 60 * 1000);
 	const now = new Date();
@@ -136,52 +111,32 @@ async function loadFeedData(
 
 	const filtered = sessionRows.filter((r) => isOpenStatus(r.status) && r.startsAt <= cutoff);
 
-	// Count confirmed bookings per session in one follow-up query, then map
-	// into the feed shape. Cleaner than a correlated sub-query via drizzle's
-	// sql template — and easier to test.
-	const countsBySession = new Map<string, number>();
+	const sessionIds = filtered.map((s) => s.id);
+	const countsBySession = await confirmedCounts(sessionIds);
+
+	// Researcher feed only: who is booked, with their form answers. Anonymised
+	// bookings still count above, but carry no details to list.
 	const participantInfoBySession = new Map<string, ParticipantInSession[]>();
-	if (filtered.length > 0) {
-		if (includeParticipants) {
-			const bookingRows = await db
-				.select()
-				.from(bookings)
-				.where(
-					inArray(
-						bookings.sessionId,
-						filtered.map((s) => s.id)
-					)
-				);
-			for (const b of bookingRows) {
-				if (b.status === 'confirmed') {
-					countsBySession.set(b.sessionId, (countsBySession.get(b.sessionId) ?? 0) + 1);
-					// Anonymised bookings still count, but carry no details to list.
-					if (b.snapshotEmail && !b.anonymisedAt) {
-						const participantInfo = participantInfoBySession.get(b.sessionId) ?? [];
-						participantInfo.push({
-							participantEmail: b.snapshotEmail,
-							participantName: b.snapshotName,
-							participantFormValues: parseFormValues(b.snapshotFields)
-						});
-						participantInfoBySession.set(b.sessionId, participantInfo);
-					}
-				}
-			}
-		} else {
-			const bookingRows = await db
-				.select({ sessionId: bookings.sessionId, status: bookings.status })
-				.from(bookings)
-				.where(
-					inArray(
-						bookings.sessionId,
-						filtered.map((s) => s.id)
-					)
-				);
-			for (const b of bookingRows) {
-				if (b.status === 'confirmed') {
-					countsBySession.set(b.sessionId, (countsBySession.get(b.sessionId) ?? 0) + 1);
-				}
-			}
+	if (includeParticipants && sessionIds.length > 0) {
+		const bookingRows = await db
+			.select()
+			.from(bookings)
+			.where(
+				and(
+					inArray(bookings.sessionId, sessionIds),
+					eq(bookings.status, 'confirmed'),
+					isNull(bookings.anonymisedAt)
+				)
+			);
+		for (const b of bookingRows) {
+			if (!b.snapshotEmail) continue;
+			const participantInfo = participantInfoBySession.get(b.sessionId) ?? [];
+			participantInfo.push({
+				participantEmail: b.snapshotEmail,
+				participantName: b.snapshotName,
+				participantFormValues: parseFormValues(b.snapshotFields)
+			});
+			participantInfoBySession.set(b.sessionId, participantInfo);
 		}
 	}
 
@@ -202,61 +157,68 @@ async function loadFeedData(
 }
 
 export function toLocalDateArray(d: Date): DateArray {
-	// Extract wall-clock components in CLINIC_TZ so the ics library emits
-	// DTSTART;TZID=<zone>:YYYYMMDDTHHmmss — unambiguous for all calendar clients.
-	const dtf = new Intl.DateTimeFormat('en-US', {
-		timeZone: CLINIC_TZ,
-		year: 'numeric',
-		month: '2-digit',
-		day: '2-digit',
-		hour: '2-digit',
-		minute: '2-digit',
-		hour12: false
+	// Wall-clock components in CLINIC_TZ, emitted as floating local time.
+	const w = tzParts(d, CLINIC_TZ);
+	return [w.year, w.month, w.day, w.hour, w.minute];
+}
+
+type Experiment = typeof experiments.$inferSelect;
+
+/**
+ * Common shape of every event we emit: floating clinic-local start/end with
+ * the experimenter as organizer and sole (accepted) attendee.
+ */
+function baseEvent(
+	exp: Experiment,
+	attrs: {
+		uid: string;
+		title: string;
+		description: string;
+		location?: string;
+		start: Date;
+		end: Date;
+		status: 'CONFIRMED' | 'CANCELLED' | 'TENTATIVE';
+	}
+): EventAttributes {
+	const organizer = { name: exp.experimenterName, email: exp.experimenterEmail };
+	return {
+		uid: attrs.uid,
+		title: attrs.title,
+		description: attrs.description,
+		location: attrs.location,
+		start: toLocalDateArray(attrs.start),
+		end: toLocalDateArray(attrs.end),
+		startInputType: 'local',
+		endInputType: 'local',
+		startOutputType: 'local',
+		endOutputType: 'local',
+		status: attrs.status,
+		organizer,
+		attendees: [{ ...organizer, rsvp: true, role: 'CHAIR', partstat: 'ACCEPTED' }]
+	};
+}
+
+/** The event for a session itself, shared by all three feeds. */
+function sessionEvent(
+	exp: Experiment,
+	s: SessionRow,
+	host: string,
+	opts: { showCount: boolean; description?: string }
+): EventAttributes {
+	const count = opts.showCount ? ` (${s.confirmedCount}/${s.capacity})` : '';
+	return baseEvent(exp, {
+		uid: `${s.id}@${host}`,
+		title: `${sessionStatusForEventName(s.status)}${exp.name}${count}`,
+		description: opts.description ?? exp.description,
+		location: s.location || undefined,
+		start: s.startsAt,
+		end: s.endsAt,
+		status: sessionStatusToIcsStatus(s.status)
 	});
-	const parts = Object.fromEntries(dtf.formatToParts(d).map((p) => [p.type, p.value])) as Record<
-		string,
-		string
-	>;
-	return [
-		+parts.year,
-		+parts.month,
-		+parts.day,
-		+parts.hour === 24 ? 0 : +parts.hour,
-		+parts.minute
-	];
 }
 
-function buildPublicEvent(
-	exp: typeof experiments.$inferSelect,
-	s: SessionRow,
-	host: string
-): EventAttributes {
-	return buildCalendarEvent(
-		{
-			uid: `${s.id}@${host}`,
-			title: `${sessionStatusForEventName(s.status)}${exp.name} (${s.confirmedCount}/${s.capacity})`,
-			description: exp.description,
-			location: s.location || undefined,
-			start: toLocalDateArray(s.startsAt),
-			end: toLocalDateArray(s.endsAt),
-			startInputType: 'local',
-			endInputType: 'local',
-			startOutputType: 'local',
-			endOutputType: 'local',
-			status: sessionStatusToIcsStatus(s.status)
-		},
-		s.id,
-		host,
-		exp.experimenterEmail,
-		exp.experimenterName
-	);
-}
-
-function buildResearcherEvent(
-	exp: typeof experiments.$inferSelect,
-	s: SessionRow,
-	host: string
-): EventAttributes {
+/** Experiment description plus who is booked and what they answered. */
+function researcherDescription(exp: Experiment, s: SessionRow): string {
 	let description = exp.description;
 	if (s.participants && s.participants.length > 0) {
 		description += '\n\nParticipant form values:\n';
@@ -267,51 +229,7 @@ function buildResearcherEvent(
 			}
 		});
 	}
-	return buildCalendarEvent(
-		{
-			uid: `${s.id}@${host}`,
-			title: `${sessionStatusForEventName(s.status)}${exp.name} (${s.confirmedCount}/${s.capacity})`,
-			description: description,
-			location: s.location || undefined,
-			start: toLocalDateArray(s.startsAt),
-			end: toLocalDateArray(s.endsAt),
-			startInputType: 'local',
-			endInputType: 'local',
-			startOutputType: 'local',
-			endOutputType: 'local',
-			status: sessionStatusToIcsStatus(s.status)
-		},
-		s.id,
-		host,
-		exp.experimenterEmail,
-		exp.experimenterName
-	);
-}
-
-function buildParticipantSessionEvent(
-	exp: typeof experiments.$inferSelect,
-	s: SessionRow,
-	host: string
-): EventAttributes {
-	return buildCalendarEvent(
-		{
-			uid: `${s.id}@${host}`,
-			title: `${sessionStatusForEventName(s.status)}${exp.name}`,
-			description: exp.description,
-			location: s.location || undefined,
-			start: toLocalDateArray(s.startsAt),
-			end: toLocalDateArray(s.endsAt),
-			startInputType: 'local',
-			endInputType: 'local',
-			startOutputType: 'local',
-			endOutputType: 'local',
-			status: sessionStatusToIcsStatus(s.status)
-		},
-		s.id,
-		host,
-		exp.experimenterEmail,
-		exp.experimenterName
-	);
+	return description;
 }
 
 function reminderMatchesCondition(condition: string, s: SessionRow): boolean {
@@ -328,31 +246,21 @@ function reminderMatchesCondition(condition: string, s: SessionRow): boolean {
 }
 
 function buildReminderEvent(
-	exp: typeof experiments.$inferSelect,
+	exp: Experiment,
 	s: SessionRow,
 	rule: typeof reminderRules.$inferSelect,
 	host: string
 ): EventAttributes {
 	const reminderStart = new Date(s.startsAt.getTime() - rule.offsetMinutesBefore * 60 * 1000);
 	const reminderEnd = new Date(reminderStart.getTime() + rule.durationMinutes * 60 * 1000);
-	return buildCalendarEvent(
-		{
-			uid: `${s.id}-reminder-${rule.id}@${host}`,
-			title: `${rule.label} — ${exp.name} (${s.confirmedCount}/${s.capacity})`,
-			description: `Reminder for session ${s.id}. Current booking count: ${s.confirmedCount}/${s.capacity}. Minimum: ${s.minParticipants}.`,
-			start: toLocalDateArray(reminderStart),
-			end: toLocalDateArray(reminderEnd),
-			startInputType: 'local',
-			endInputType: 'local',
-			startOutputType: 'local',
-			endOutputType: 'local',
-			status: 'CONFIRMED'
-		},
-		s.id,
-		host,
-		exp.experimenterEmail,
-		exp.experimenterName
-	);
+	return baseEvent(exp, {
+		uid: `${s.id}-reminder-${rule.id}@${host}`,
+		title: `${rule.label} — ${exp.name} (${s.confirmedCount}/${s.capacity})`,
+		description: `Reminder for session ${s.id}. Current booking count: ${s.confirmedCount}/${s.capacity}. Minimum: ${s.minParticipants}.`,
+		start: reminderStart,
+		end: reminderEnd,
+		status: 'CONFIRMED'
+	});
 }
 
 function renderEvents(events: EventAttributes[]): string {
@@ -372,7 +280,7 @@ export async function buildExperimentFeed(
 ): Promise<string> {
 	const host = opts.host ?? 'localhost';
 	const { experiment, sessions: rows } = await loadFeedData(experimentId, opts);
-	const events = rows.map((s) => buildPublicEvent(experiment, s, host));
+	const events = rows.map((s) => sessionEvent(experiment, s, host, { showCount: true }));
 	return renderEvents(events);
 }
 
@@ -391,7 +299,12 @@ export async function buildResearcherFeed(
 
 	const events: EventAttributes[] = [];
 	for (const s of rows) {
-		events.push(buildResearcherEvent(experiment, s, host));
+		events.push(
+			sessionEvent(experiment, s, host, {
+				showCount: true,
+				description: researcherDescription(experiment, s)
+			})
+		);
 		for (const rule of rules) {
 			if (reminderMatchesCondition(rule.condition, s)) {
 				events.push(buildReminderEvent(experiment, s, rule, host));
@@ -417,8 +330,23 @@ export async function buildSessionFeed(sessionId: string, opts: IcsOpts = {}): P
 
 	const events: EventAttributes[] = [];
 	if (isOpenStatus(session.status)) {
-		events.push(buildParticipantSessionEvent(experiment, { ...session, confirmedCount: 0 }, host));
+		events.push(
+			sessionEvent(experiment, { ...session, confirmedCount: 0 }, host, { showCount: false })
+		);
 	}
 
 	return renderEvents(events);
+}
+
+/**
+ * Wrap a rendered feed in a `text/calendar` response. `public` feeds carry no
+ * participant data and may be cached by intermediaries.
+ */
+export function icsResponse(body: string, visibility: 'public' | 'private'): Response {
+	return new Response(body, {
+		headers: {
+			'content-type': 'text/calendar; charset=utf-8',
+			'cache-control': `${visibility}, max-age=60`
+		}
+	});
 }

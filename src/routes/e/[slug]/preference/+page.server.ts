@@ -7,7 +7,7 @@ import { createRecurringPreference } from '#lib/server/preferences.js';
 import { parseParticipantSubmission, requirePublishedExperiment } from '#lib/server/public-form.js';
 import { buildWeeklyRRule } from '#lib/server/recurrence.js';
 import { parseForm } from '#lib/server/validate.js';
-import { localToUtc } from '#lib/server/time.js';
+import { endOfDayUtc, startOfDayUtc } from '#lib/server/time.js';
 import { DATA_RETENTION_DAYS } from '$app/env/private';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -38,8 +38,8 @@ export const actions: Actions = {
 			rrule: buildWeeklyRRule(parsed.data.byDay),
 			dtstartLocal: parsed.data.dtstartLocal,
 			durationMinutes: parsed.data.durationMinutes,
-			windowStart: parsed.data.windowStart ? localToUtc(`${parsed.data.windowStart}T00:00`) : null,
-			windowEnd: parsed.data.windowEnd ? localToUtc(`${parsed.data.windowEnd}T23:59`) : null,
+			windowStart: startOfDayUtc(parsed.data.windowStart),
+			windowEnd: endOfDayUtc(parsed.data.windowEnd),
 			notes: parsed.data.notes,
 			snapshotFields: submission.snapshotFields
 		});

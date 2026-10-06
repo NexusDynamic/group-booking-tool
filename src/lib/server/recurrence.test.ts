@@ -2,12 +2,7 @@
  * Unit tests for recurrence expansion — exercise DST transitions and window
  * bounds. Pure function, no DB needed.
  */
-import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('$app/env/private', async (importOriginal) => ({
-	...(await importOriginal()),
-	...{ CLINIC_TZ: 'Europe/Copenhagen' }
-}));
+import { describe, expect, it } from 'vitest';
 
 const { expandTemplate, buildWeeklyRRule } = await import('./recurrence');
 const { localToUtc } = await import('./time');

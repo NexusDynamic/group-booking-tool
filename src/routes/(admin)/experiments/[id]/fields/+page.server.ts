@@ -5,6 +5,7 @@ import {
 	requiredFieldsSchema,
 	type RequiredField
 } from '#lib/schemas/experiment.js';
+import { zodErrors } from '#lib/server/validate.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -50,12 +51,7 @@ export const actions: Actions = {
 		const raw = formDataToFields(fd);
 		const result = requiredFieldsSchema.safeParse(raw);
 		if (!result.success) {
-			const errors: Record<string, string> = {};
-			for (const issue of result.error.issues) {
-				const path = issue.path.join('.');
-				if (!errors[path]) errors[path] = issue.message;
-			}
-			return fail(400, { errors, fields: raw as RequiredField[] });
+			return fail(400, { errors: zodErrors(result.error), fields: raw as RequiredField[] });
 		}
 		// Reject duplicate keys — zod array schema doesn't check cross-item uniqueness
 		const keys = result.data.map((f) => f.key);

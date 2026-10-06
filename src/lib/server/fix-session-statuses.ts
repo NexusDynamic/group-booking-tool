@@ -12,12 +12,9 @@
  * Run via docker-entrypoint.sh:
  *   node_modules/.bin/tsx src/lib/server/fix-session-statuses.ts
  */
-import Database from 'better-sqlite3';
+import { openCliDb } from './db/cli.ts';
 
-const dbUrl = process.env.DATABASE_URL;
-if (!dbUrl) throw new Error('DATABASE_URL is not set');
-
-const client = new Database(dbUrl);
+const { client } = openCliDb('fix-session-statuses');
 
 const NOW_MS = `cast(unixepoch('subsecond') * 1000 as integer)`;
 

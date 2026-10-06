@@ -1,9 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
-
-vi.mock('$app/env/private', async (importOriginal) => ({
-	...(await importOriginal()),
-	...{ CLINIC_TZ: 'Europe/Copenhagen', CLINIC_LOCALE: 'da-DK' }
-}));
+import { describe, it, expect } from 'vitest';
 
 import { CLINIC_LOCALE, CLINIC_TZ, formatInTz, localToUtc, tzOffsetMs } from './time';
 

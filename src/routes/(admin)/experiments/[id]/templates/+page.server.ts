@@ -9,7 +9,13 @@ import {
 	regenerateFutureSessions
 } from '#lib/server/sessions.js';
 import { buildWeeklyRRule } from '#lib/server/recurrence.js';
-import { CLINIC_TZ, formatInTz, localToUtc } from '#lib/server/time.js';
+import {
+	CLINIC_TZ,
+	endOfDayUtc,
+	formatInTz,
+	startOfDayUtc,
+	todayInClinicTz
+} from '#lib/server/time.js';
 import { recurrenceTemplateFormSchema } from '#lib/schemas/session.js';
 import { formId, parseForm } from '#lib/server/validate.js';
 import type { Actions, PageServerLoad } from './$types';
@@ -28,29 +34,6 @@ export const load: PageServerLoad = async ({ params }) => {
 	}));
 	return { experiment, templates, clinicTz: CLINIC_TZ };
 };
-
-/** Midnight on the given local date = start of window (inclusive). */
-function windowStartToUtc(dateStr: string | undefined): Date | null {
-	if (!dateStr) return null;
-	return localToUtc(`${dateStr}T00:00`);
-}
-
-/**
- * End-of-day on the given local date = end of window (inclusive).
- * Using T00:00 would exclude sessions on the end date itself because a 09:00
- * session in UTC+2 lands at 07:00 UTC, which is after midnight UTC (22:00 the
- * previous evening local → same effect).
- */
-function windowEndToUtc(dateStr: string | undefined): Date | null {
-	if (!dateStr) return null;
-	return localToUtc(`${dateStr}T23:59:59`);
-}
-
-/** Today's date (YYYY-MM-DD) in the clinic timezone. */
-function todayInClinicTz(): string {
-	// en-CA uses YYYY-MM-DD format
-	return new Intl.DateTimeFormat('en-CA', { timeZone: CLINIC_TZ }).format(new Date());
-}
 
 export const actions: Actions = {
 	create: async ({ request, params }) => {
@@ -87,8 +70,8 @@ export const actions: Actions = {
 			minParticipants,
 			location,
 			notes,
-			windowStart: windowStartToUtc(windowStart),
-			windowEnd: windowEndToUtc(windowEnd)
+			windowStart: startOfDayUtc(windowStart),
+			windowEnd: endOfDayUtc(windowEnd)
 		});
 
 		return { created: true };

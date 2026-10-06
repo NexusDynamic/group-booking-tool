@@ -36,16 +36,11 @@
  *     - correctly handles a participant with no bookings or preferences
  */
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestDb, clearTables } from './db/test-helpers';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import type Database from 'better-sqlite3';
 import type * as schema from './db/schema';
-
-vi.mock('$app/env/private', async (importOriginal) => ({
-	...(await importOriginal()),
-	...{ DATABASE_URL: ':memory:' }
-}));
 
 const { runAnonymizationJob, forceAnonymiseParticipant } = await import('./anonymization');
 

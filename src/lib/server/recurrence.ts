@@ -5,7 +5,7 @@
 import rrulePkg from 'rrule';
 const { RRule } = rrulePkg;
 type Weekday = InstanceType<typeof rrulePkg.Weekday>;
-import { CLINIC_TZ, localToUtc, tzOffsetMs } from './time';
+import { CLINIC_TZ, localToUtc, parseLocalDateTime, tzOffsetMs } from './time';
 
 /**
  * Expand a weekly recurrence template into concrete UTC session instants
@@ -44,15 +44,7 @@ export function expandTemplate(input: ExpandInput): ExpandedOccurrence[] {
 	const tz = input.tz ?? CLINIC_TZ;
 
 	// Parse the wall-clock components once — they're preserved across DST.
-	const match = input.dtstartLocal.match(
-		/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?$/
-	);
-	if (!match) {
-		throw new Error(`expandTemplate: bad dtstartLocal "${input.dtstartLocal}"`);
-	}
-	const [, , , , hStr, mStr] = match;
-	const wallHour = +hStr;
-	const wallMinute = +mStr;
+	const { hour: wallHour, minute: wallMinute } = parseLocalDateTime(input.dtstartLocal);
 
 	const dtstartUtc = localToUtc(input.dtstartLocal, tz);
 

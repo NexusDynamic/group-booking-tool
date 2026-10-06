@@ -25,13 +25,9 @@ export const load: PageServerLoad = async ({ params }) => {
 
 export const actions: Actions = {
 	update: async ({ request, params }) => {
-		const formData = await request.formData();
-		const parsed = parseForm(experimentFormSchema, formData);
+		const parsed = parseForm(experimentFormSchema, await request.formData());
 		if (!parsed.ok) return parsed.failure;
-		const values: Record<string, string> = {};
-		for (const [k, v] of formData.entries()) {
-			if (typeof v === 'string') values[k] = v;
-		}
+		const { values } = parsed;
 		try {
 			await updateExperiment(params.id, parsed.data);
 		} catch (err) {

@@ -1,72 +1,47 @@
 import { z } from 'zod';
+import {
+	byDay,
+	durationMinutes,
+	localDateTime,
+	MIN_ABOVE_MAX_ISSUE,
+	optionalDate,
+	participantCount
+} from './common';
 
-const localDateTime = z
-	.string()
-	.trim()
-	.regex(/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?$/, 'Use format YYYY-MM-DDTHH:mm');
-
-/** A session can never reach a minimum that is above its capacity. */
 const minWithinCapacity = (v: { minParticipants: number; capacity: number }) =>
 	v.minParticipants <= v.capacity;
-const minWithinCapacityIssue = {
-	message: 'Minimum cannot exceed the maximum',
-	path: ['minParticipants']
-};
 
 /** Form schema for a one-off session created directly (no template). */
 export const sessionFormSchema = z
 	.object({
 		startsAtLocal: localDateTime,
-		durationMinutes: z.coerce
-			.number()
-			.int()
-			.min(1)
-			.max(24 * 60),
-		capacity: z.coerce.number().int().min(1).max(1000),
-		minParticipants: z.coerce.number().int().min(1).max(1000),
+		durationMinutes,
+		capacity: participantCount,
+		minParticipants: participantCount,
 		location: z.string().max(1000).default(''),
 		notes: z.string().max(5000).default('')
 	})
-	.refine(minWithinCapacity, minWithinCapacityIssue);
+	.refine(minWithinCapacity, MIN_ABOVE_MAX_ISSUE);
 export type SessionForm = z.infer<typeof sessionFormSchema>;
 
 /** Form schema for a recurrence template. */
 export const recurrenceTemplateFormSchema = z
 	.object({
 		label: z.string().trim().min(1).max(120),
-		// Comma-separated BYDAY tokens: MO,TU,WE,TH,FR,SA,SU
-		byDay: z
-			.string()
-			.trim()
-			.min(1)
-			.regex(/^(MO|TU|WE|TH|FR|SA|SU)(,(MO|TU|WE|TH|FR|SA|SU))*$/, 'Use MO,TU,... tokens'),
+		byDay,
 		// Wall-clock time only (HH:mm); the date part is derived from windowStart or today
 		timeLocal: z
 			.string()
 			.trim()
 			.regex(/^\d{2}:\d{2}$/, 'Use HH:mm format'),
-		durationMinutes: z.coerce
-			.number()
-			.int()
-			.min(1)
-			.max(24 * 60),
-		capacity: z.coerce.number().int().min(1).max(1000),
-		minParticipants: z.coerce.number().int().min(1).max(1000),
+		durationMinutes,
+		capacity: participantCount,
+		minParticipants: participantCount,
 		location: z.string().max(1000).default(''),
 		notes: z.string().max(5000).default(''),
 		// ISO local date-only: YYYY-MM-DD (we interpret at midnight in clinic tz)
-		windowStart: z
-			.string()
-			.trim()
-			.regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD')
-			.optional()
-			.or(z.literal('').transform(() => undefined)),
-		windowEnd: z
-			.string()
-			.trim()
-			.regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD')
-			.optional()
-			.or(z.literal('').transform(() => undefined))
+		windowStart: optionalDate,
+		windowEnd: optionalDate
 	})
-	.refine(minWithinCapacity, minWithinCapacityIssue);
+	.refine(minWithinCapacity, MIN_ABOVE_MAX_ISSUE);
 export type RecurrenceTemplateForm = z.infer<typeof recurrenceTemplateFormSchema>;

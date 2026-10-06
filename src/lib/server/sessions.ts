@@ -1,12 +1,7 @@
-import { and, asc, eq, gte, inArray, isNull } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from './db';
 import { generateToken } from './tokens';
-import {
-	bookings,
-	recurrenceTemplates,
-	sessions,
-	type experiments as experimentsTable
-} from './db/schema';
+import { bookings, recurrenceTemplates, sessions } from './db/schema';
 import { expandTemplate } from './recurrence';
 import { syncSessionStatus } from './session-status';
 
@@ -47,30 +42,22 @@ export async function sessionsWithCounts(
 		: eq(sessions.experimentId, experimentId);
 
 	const rows = await db.select().from(sessions).where(whereExpr).orderBy(asc(sessions.startsAt));
+	const counts = await confirmedCounts(rows.map((r) => r.id));
+	return rows.map((r) => ({ ...r, confirmedCount: counts.get(r.id) ?? 0 }));
+}
 
-	// Count confirmed bookings in a follow-up query and join in JS. Drizzle's
-	// correlated sql subquery pattern returned zeros in the in-memory sqlite
-	// test environment — splitting into two queries is both more portable and
-	// easier to unit-test.
-	const countsBySession = new Map<string, number>();
-	if (rows.length > 0) {
-		const bookingRows = await db
-			.select({ sessionId: bookings.sessionId, status: bookings.status })
-			.from(bookings)
-			.where(
-				inArray(
-					bookings.sessionId,
-					rows.map((r) => r.id)
-				)
-			);
-		for (const b of bookingRows) {
-			if (b.status === 'confirmed') {
-				countsBySession.set(b.sessionId, (countsBySession.get(b.sessionId) ?? 0) + 1);
-			}
-		}
-	}
-
-	return rows.map((r) => ({ ...r, confirmedCount: countsBySession.get(r.id) ?? 0 }));
+/**
+ * Confirmed-booking count per session id. Sessions without confirmed
+ * bookings are absent from the map (treat as 0).
+ */
+export async function confirmedCounts(sessionIds: string[]): Promise<Map<string, number>> {
+	if (sessionIds.length === 0) return new Map();
+	const rows = await db
+		.select({ sessionId: bookings.sessionId, n: sql<number>`count(*)` })
+		.from(bookings)
+		.where(and(inArray(bookings.sessionId, sessionIds), eq(bookings.status, 'confirmed')))
+		.groupBy(bookings.sessionId);
+	return new Map(rows.map((r) => [r.sessionId, Number(r.n)]));
 }
 
 export async function createOneOffSession(
@@ -295,6 +282,3 @@ export async function regenerateFutureSessions(
 	const inserted = await materialiseTemplate(templateId);
 	return { deleted, inserted };
 }
-
-// Re-export for discoverability
-export type { experimentsTable };

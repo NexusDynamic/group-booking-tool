@@ -9,25 +9,9 @@ import {
 } from '#lib/server/sessions.js';
 import { listBookingsForSession, setBookingStatus } from '#lib/server/bookings.js';
 import { sessionFormSchema } from '#lib/schemas/session.js';
-import { CLINIC_TZ, formatInTz, localToUtc } from '#lib/server/time.js';
+import { CLINIC_TZ, formatInTz, localToUtc, toClinicTzInput } from '#lib/server/time.js';
 import { formId, parseForm } from '#lib/server/validate.js';
 import type { Actions, PageServerLoad } from './$types';
-
-/** Format a UTC Date as "YYYY-MM-DDTHH:mm" in CLINIC_TZ for datetime-local inputs. */
-function toClinicTzInput(d: Date): string {
-	const dtf = new Intl.DateTimeFormat('en-CA', {
-		timeZone: CLINIC_TZ,
-		year: 'numeric',
-		month: '2-digit',
-		day: '2-digit',
-		hour: '2-digit',
-		minute: '2-digit',
-		hour12: false
-	});
-	const parts = Object.fromEntries(dtf.formatToParts(d).map((p) => [p.type, p.value]));
-	const h = +parts.hour === 24 ? '00' : parts.hour;
-	return `${parts.year}-${parts.month}-${parts.day}T${h}:${parts.minute}`;
-}
 
 export const load: PageServerLoad = async ({ params }) => {
 	const experiment = await getExperimentById(params.id);

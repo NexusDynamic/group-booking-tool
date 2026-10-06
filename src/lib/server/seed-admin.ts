@@ -12,13 +12,12 @@
  * reuse `#lib/server/auth` because that module imports `$app/server` which
  * only resolves inside a SvelteKit runtime.
  */
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { betterAuth } from 'better-auth/minimal';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { openCliDb } from './db/cli.ts';
 import * as schema from './db/schema.ts';
 
-const { DATABASE_URL, ORIGIN, BETTER_AUTH_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD } = process.env;
+const { ORIGIN, BETTER_AUTH_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD } = process.env;
 
 function requireEnv(name: string, value: string | undefined): string {
 	if (!value) {
@@ -28,13 +27,10 @@ function requireEnv(name: string, value: string | undefined): string {
 	return value;
 }
 
-const dbUrl = requireEnv('DATABASE_URL', DATABASE_URL);
+const { db } = openCliDb('seed-admin');
 requireEnv('BETTER_AUTH_SECRET', BETTER_AUTH_SECRET);
 const email = requireEnv('ADMIN_EMAIL', ADMIN_EMAIL);
 const password = requireEnv('ADMIN_PASSWORD', ADMIN_PASSWORD);
-
-const client = new Database(dbUrl);
-const db = drizzle(client, { schema });
 
 const auth = betterAuth({
 	baseURL: ORIGIN,
