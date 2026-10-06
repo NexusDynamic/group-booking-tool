@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Alert from '#lib/components/Alert.svelte';
+	import { btnDanger } from '#lib/styles.js';
 	/* eslint svelte/no-navigation-without-resolve: "off" */
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
@@ -153,11 +155,7 @@
 	{/if}
 
 	{#if form?.error}
-		<p
-			class="mt-6 rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-300"
-		>
-			{form.error}
-		</p>
+		<Alert variant="error" class="mt-6">{form.error}</Alert>
 	{/if}
 
 	{#if form?.cancelled}
@@ -191,11 +189,7 @@
 				}}
 				class="mt-3"
 			>
-				<button
-					type="submit"
-					class="rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm text-red-700 hover:bg-red-100 dark:border-red-700 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/30"
-					>Cancel booking</button
-				>
+				<button type="submit" class={btnDanger}>Cancel booking</button>
 			</form>
 		</section>
 	{/if}

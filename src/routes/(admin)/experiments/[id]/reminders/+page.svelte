@@ -6,7 +6,7 @@
 	import Card from '#lib/components/Card.svelte';
 	import FormField from '#lib/components/FormField.svelte';
 	import { resolve } from '$app/paths';
-	import { inputClass } from '#lib/styles.js';
+	import { backLink, btnPrimary, inputClass } from '#lib/styles.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	let exp = $derived(data.experiment);
@@ -36,11 +36,7 @@
 	<title>Reminder rules — {exp.name}</title>
 </svelte:head>
 
-<a
-	href={resolve(`experiments/${exp.id}`)}
-	class="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
-	>← {exp.name}</a
->
+<a href={resolve(`experiments/${exp.id}`)} class={backLink}>← {exp.name}</a>
 <h1 class="mt-1 text-2xl font-semibold">Reminder rules</h1>
 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
 	These rules generate extra events in the researcher ICS feed. Use them to remind yourself to email
@@ -118,10 +114,6 @@
 		/>
 	</FormField>
 	<div class="sm:col-span-2">
-		<button
-			type="submit"
-			class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
-			>Add rule</button
-		>
+		<button type="submit" class={btnPrimary}>Add rule</button>
 	</div>
 </form>

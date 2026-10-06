@@ -6,7 +6,7 @@
 	import Card from '#lib/components/Card.svelte';
 	import FormField from '#lib/components/FormField.svelte';
 	import { resolve } from '$app/paths';
-	import { inputClass } from '#lib/styles.js';
+	import { backLink, btnPrimary, inputClass } from '#lib/styles.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -40,11 +40,7 @@
 	<title>Sessions — {exp.name}</title>
 </svelte:head>
 
-<a
-	href={resolve(`experiments/${exp.id}`)}
-	class="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
-	>← {exp.name}</a
->
+<a href={resolve(`experiments/${exp.id}`)} class={backLink}>← {exp.name}</a>
 <div class="mt-1 flex items-center justify-between">
 	<h1 class="text-2xl font-semibold">Sessions</h1>
 	<div class="flex items-center gap-3 text-sm">
@@ -136,11 +132,7 @@
 				>
 			</FormField>
 			<div class="sm:col-span-2">
-				<button
-					type="submit"
-					class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
-					>Create session</button
-				>
+				<button type="submit" class={btnPrimary}>Create session</button>
 			</div>
 		</form>
 	</Card>

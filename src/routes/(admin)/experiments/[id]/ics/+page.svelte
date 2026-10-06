@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { backLink, btnSecondary } from '#lib/styles.js';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import type { ActionData, PageData } from './$types';
@@ -31,11 +32,7 @@
 	<title>ICS feeds — {exp.name}</title>
 </svelte:head>
 
-<a
-	href={resolve('/(admin)/experiments/[id]', { id: exp.id })}
-	class="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
-	>← {exp.name}</a
->
+<a href={resolve('/(admin)/experiments/[id]', { id: exp.id })} class={backLink}>← {exp.name}</a>
 <h1 class="mt-1 text-2xl font-semibold">Calendar feeds</h1>
 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
 	Subscribe from Apple Calendar, Google Calendar, Fantastical, etc. Each event title includes a live
@@ -64,10 +61,7 @@
 				value={publicUrl(exp.publicIcsToken)}
 				class="flex-1 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 font-mono text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
 			/>
-			<button
-				type="button"
-				onclick={() => copy('public')}
-				class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+			<button type="button" onclick={() => copy('public')} class={btnSecondary}
 				>{copied === 'public' ? 'Copied' : 'Copy'}</button
 			>
 		</div>
@@ -94,10 +88,7 @@
 				value={researcherUrl(exp.researcherIcsToken)}
 				class="flex-1 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 font-mono text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
 			/>
-			<button
-				type="button"
-				onclick={() => copy('researcher')}
-				class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+			<button type="button" onclick={() => copy('researcher')} class={btnSecondary}
 				>{copied === 'researcher' ? 'Copied' : 'Copy'}</button
 			>
 		</div>

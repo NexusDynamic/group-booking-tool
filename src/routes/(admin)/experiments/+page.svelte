@@ -3,7 +3,7 @@
 	import type { ActionData, PageData } from './$types';
 	import { resolve } from '$app/paths';
 	import FormField from '#lib/components/FormField.svelte';
-	import { inputClass } from '#lib/styles.js';
+	import { btnPrimary, inputClass } from '#lib/styles.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -16,11 +16,7 @@
 
 <div class="flex items-center justify-between">
 	<h1 class="text-2xl font-semibold">Experiments</h1>
-	<button
-		type="button"
-		onclick={() => (showNew = !showNew)}
-		class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
-	>
+	<button type="button" onclick={() => (showNew = !showNew)} class={btnPrimary}>
 		{showNew ? 'Cancel' : 'New experiment'}
 	</button>
 </div>
@@ -127,11 +123,7 @@
 				>
 			</label>
 			<div class="sm:col-span-2">
-				<button
-					type="submit"
-					class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
-					>Create</button
-				>
+				<button type="submit" class={btnPrimary}>Create</button>
 			</div>
 		</form>
 	</section>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { backLink, btnSecondarySm } from '#lib/styles.js';
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 	import ExperimentNav from '#lib/components/ExperimentNav.svelte';
@@ -31,11 +32,7 @@
 	<title>Preferences — {exp.name}</title>
 </svelte:head>
 
-<a
-	href={resolve(`experiments/${exp.id}`)}
-	class="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
-	>← {exp.name}</a
->
+<a href={resolve(`experiments/${exp.id}`)} class={backLink}>← {exp.name}</a>
 <h1 class="mt-1 text-2xl font-semibold">Preferences</h1>
 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
 	Standing availability queue. Assign pending preferences to concrete sessions, or decline if
@@ -117,11 +114,7 @@
 				{/if}
 				<form method="post" action="?/decline" use:enhance class="mt-3">
 					<input type="hidden" name="preferenceId" value={p.id} />
-					<button
-						type="submit"
-						class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-						>Decline</button
-					>
+					<button type="submit" class={btnSecondarySm}>Decline</button>
 				</form>
 			{/if}
 		</Card>

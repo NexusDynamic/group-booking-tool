@@ -3,7 +3,7 @@
 	import type { ActionData, PageData } from './$types';
 	import Alert from '#lib/components/Alert.svelte';
 	import FormField from '#lib/components/FormField.svelte';
-	import { inputClass } from '#lib/styles.js';
+	import { btnPrimary, inputClass } from '#lib/styles.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
@@ -68,10 +68,6 @@
 				class={inputClass}
 			/>
 		</FormField>
-		<button
-			type="submit"
-			class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
-			>Change password</button
-		>
+		<button type="submit" class={btnPrimary}>Change password</button>
 	</form>
 </section>

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Honeypot from '#lib/components/Honeypot.svelte';
+	import Alert from '#lib/components/Alert.svelte';
+	import { backLink, inputClass } from '#lib/styles.js';
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
 	import { resolve } from '$app/paths';
@@ -12,22 +15,14 @@
 </svelte:head>
 
 <article class="mx-auto max-w-2xl py-10">
-	<a
-		href={resolve(`e/${data.experiment.slug}`)}
-		class="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
-		>← {data.experiment.name}</a
-	>
+	<a href={resolve(`e/${data.experiment.slug}`)} class={backLink}>← {data.experiment.name}</a>
 	<h1 class="mt-1 text-2xl font-semibold">Pick several sessions</h1>
 	<p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
 		Tick every session that could work for you. The researcher will pick one and confirm.
 	</p>
 
 	{#if form?.error}
-		<p
-			class="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-300"
-		>
-			{form.error}
-		</p>
+		<Alert variant="error">{form.error}</Alert>
 	{/if}
 
 	{#if data.sessions.length === 0}
@@ -81,22 +76,15 @@
 
 				<label class="block">
 					<span class="text-sm text-gray-700 dark:text-gray-300">Notes (optional)</span>
-					<textarea
-						name="notes"
-						rows="3"
-						class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-						>{form?.values?.notes ?? ''}</textarea
-					>
+					<textarea name="notes" rows="3" class={inputClass}>{form?.values?.notes ?? ''}</textarea>
 				</label>
 			</div>
 
-			<div aria-hidden="true" style="position:absolute;left:-10000px">
-				<input type="text" name="honeypot" tabindex="-1" autocomplete="off" />
-			</div>
+			<Honeypot />
 
 			{#if data.privacyNotice.text}
 				<p class="text-xs text-gray-500 dark:text-gray-400">
-					{#if data.privacyNotice.text}{data.privacyNotice.text}{/if}
+					{data.privacyNotice.text}
 				</p>
 			{/if}
 			<button

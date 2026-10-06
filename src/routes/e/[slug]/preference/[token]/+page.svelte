@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { btnDanger } from '#lib/styles.js';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import type { ActionData, PageData } from './$types';
@@ -75,11 +76,7 @@
 				}}
 				class="mt-3"
 			>
-				<button
-					type="submit"
-					class="rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm text-red-700 hover:bg-red-100 dark:border-red-700 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/30"
-					>Withdraw</button
-				>
+				<button type="submit" class={btnDanger}>Withdraw</button>
 			</form>
 		</section>
 	{:else if data.preference.status === 'assigned'}

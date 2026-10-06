@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { cardClass, eyebrowClass } from '#lib/styles.js';
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 
@@ -15,10 +16,8 @@
 </p>
 
 <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-	<div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-		<div class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
-			Experiments
-		</div>
+	<div class={cardClass}>
+		<div class={eyebrowClass}>Experiments</div>
 		<div class="mt-2 text-3xl font-semibold text-gray-900 dark:text-gray-100">
 			{data.counts.experiments}
 		</div>
@@ -26,19 +25,15 @@
 			{data.counts.publishedExperiments} published
 		</div>
 	</div>
-	<div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-		<div class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
-			Upcoming sessions
-		</div>
+	<div class={cardClass}>
+		<div class={eyebrowClass}>Upcoming sessions</div>
 		<div class="mt-2 text-3xl font-semibold text-gray-900 dark:text-gray-100">
 			{data.counts.upcomingSessions}
 		</div>
 	</div>
 
-	<div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-		<div class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
-			Below minimum
-		</div>
+	<div class={cardClass}>
+		<div class={eyebrowClass}>Below minimum</div>
 
 		<div
 			class="mt-2 text-3xl font-semibold {data.counts.belowMinimum > 0
@@ -48,15 +43,13 @@
 			{data.counts.belowMinimum}
 		</div>
 	</div>
-	<div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-		<div class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
-			Pending prefs
-		</div>
+	<div class={cardClass}>
+		<div class={eyebrowClass}>Pending prefs</div>
 		<div class="mt-2 text-3xl font-semibold text-gray-900 dark:text-gray-100">
 			{data.counts.pendingPreferences}
 		</div>
 	</div>
-	<div class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+	<div class={cardClass}>
 		<a
 			href={resolve('experiments')}
 			class="text-xs font-medium text-gray-500 uppercase hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"

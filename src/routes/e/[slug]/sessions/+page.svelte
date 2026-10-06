@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Honeypot from '#lib/components/Honeypot.svelte';
+	import Alert from '#lib/components/Alert.svelte';
+	import { backLink } from '#lib/styles.js';
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import type { ActionData, PageData } from './$types';
@@ -21,19 +24,11 @@
 </svelte:head>
 
 <article class="mx-auto max-w-2xl py-10">
-	<a
-		href={resolve(`e/${data.experiment.slug}`)}
-		class="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
-		>← {data.experiment.name}</a
-	>
+	<a href={resolve(`e/${data.experiment.slug}`)} class={backLink}>← {data.experiment.name}</a>
 	<h1 class="mt-1 text-2xl font-semibold">Pick a session</h1>
 
 	{#if form?.error}
-		<p
-			class="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-300"
-		>
-			{form.error}
-		</p>
+		<Alert variant="error">{form.error}</Alert>
 	{/if}
 
 	{#if data.sessions.length === 0}
@@ -94,18 +89,12 @@
 				/>
 			</fieldset>
 
-			<!-- honeypot: real users never fill this in -->
-			<div aria-hidden="true" style="position:absolute;left:-10000px">
-				<label>
-					Leave this blank
-					<input type="text" name="honeypot" tabindex="-1" autocomplete="off" />
-				</label>
-			</div>
+			<Honeypot />
 			<input type="hidden" name="startedAt" value={startedAt} />
 
 			{#if data.privacyNotice.text}
 				<p class="text-xs text-gray-500 dark:text-gray-400">
-					{#if data.privacyNotice.text}{data.privacyNotice.text}{/if}
+					{data.privacyNotice.text}
 				</p>
 			{/if}
 
