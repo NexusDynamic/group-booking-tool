@@ -1,12 +1,14 @@
-overrides:
-  better-call: '^1.3.5'
+# better-auth still declares a peer on @sveltejs/kit ^2. Its SvelteKit
+# integration only touches event.request / event.url / event.cookies, which
+# are unchanged in kit 3.
+peerDependencyRules:
+  allowedVersions:
+    'better-auth>@sveltejs/kit': '3'
 
 allowBuilds:
-  '@prisma/client': true
   better-sqlite3: true
   esbuild: true
 onlyBuiltDependencies:
-  - '@prisma/client'
   - '@tailwindcss/oxide'
   - better-sqlite3
   - esbuild

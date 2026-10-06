@@ -1,7 +1,8 @@
 # ---------- build stage ----------
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 
 # pnpm's version comes from the `packageManager` field in package.json.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN npm install -g corepack@latest && corepack enable
 
 # Native addon build tools — required when better-sqlite3 has no prebuilt
@@ -33,7 +34,7 @@ RUN pnpm build
 
 
 # ---------- runtime stage ----------
-FROM node:22-alpine AS runtime
+FROM node:24-alpine AS runtime
 
 WORKDIR /app
 

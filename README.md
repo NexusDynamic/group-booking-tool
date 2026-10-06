@@ -154,9 +154,9 @@ pnpm check                     # svelte-check + typescript
 pnpm lint
 ```
 
-## tools and franeworks
+## tools and frameworks
 
-- SvelteKit 2 + Svelte 5, Tailwind v4
+- SvelteKit 3 + Svelte 5, Tailwind v4
 - SQLite via `better-sqlite3` and `drizzle-orm` (schema in `src/lib/server/db/schema.ts`)
 - `better-auth` for admin user
 - `ics` and `rrule` for feed generation and recurrence expansion
