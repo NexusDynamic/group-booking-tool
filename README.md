@@ -188,6 +188,66 @@ The script loads `DATABASE_URL` and `DATA_RETENTION_DAYS` from `.env`
 automatically, so no extra environment setup is needed beyond what is already
 in your `.env` file.
 
+### Webhooks (Power Automate etc.)
+
+Set `WEBHOOK_URL` to have the app POST a JSON event whenever something happens
+that you may want to act on. A Microsoft Power Automate flow starting with
+**When an HTTP request is received** works well (that trigger may need a
+Premium licence); the URL it gives you already contains a secret `sig=`
+parameter, so treat it like a password.
+
+| Event                     | When                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------ |
+| `booking.created`         | A participant books, or you assign a waiting preference (`booking.source` is `public` / `admin`) |
+| `booking.cancelled`       | A participant cancels from their link                                                            |
+| `session.minimum_reached` | A booking brings a session to its minimum — it will run                                          |
+| `session.full`            | A booking fills the last seat — time to confirm with participants                                |
+| `session.below_minimum`   | A participant cancellation drops a session below its minimum                                     |
+| `preference.created`      | Someone submits availability and is waiting to be assigned (`preference.pendingCount`)           |
+| `preference.withdrawn`    | A participant withdraws a pending preference                                                     |
+
+Payload shape (fields present depend on the event):
+
+```json
+{
+	"event": "booking.created",
+	"occurredAt": "2026-10-16T08:00:00.000Z",
+	"experiment": { "id": "…", "name": "Fun Experiment", "slug": "fun", "adminUrl": "https://…" },
+	"session": {
+		"id": "…",
+		"startsAt": "…",
+		"endsAt": "…",
+		"startsAtLocal": "17. okt. 2026 10.00",
+		"location": "Lab 1",
+		"booked": 2,
+		"minParticipants": 3,
+		"capacity": 5,
+		"status": "scheduled",
+		"adminUrl": "https://…"
+	},
+	"booking": { "id": "…", "source": "public" },
+	"preference": { "id": "…", "kind": "recurring", "pendingCount": 1 },
+	"participant": { "name": "…", "email": "…", "manageUrl": "https://…" }
+}
+```
+
+`participant` is only sent when `WEBHOOK_INCLUDE_PII=true`. With it on, a flow
+can email the participant their `manageUrl` from your own Outlook account
+(so they can't lose their link); the `/privacy` page then states that details
+are forwarded, and you should mention it in each experiment's privacy notice.
+URLs are absolute only when `ORIGIN` is set.
+
+Delivery is fire-and-forget: events are sent in the background after the
+change has been saved, with a 10 s timeout and no retries. An unreachable or
+failing endpoint is only logged (`webhook unreachable` / `webhook rejected`)
+and never affects a booking.
+
+The **Account** page has a **Send test webhook** button. It sends a
+`webhook.test` event with example values in the same shape as real events —
+paste it into Power Automate's _Parse JSON_ → _Generate from sample_. (Mark
+fields such as `session` and `participant` as optional in the generated
+schema, since not every event has them.)
+
 ## Testing
 
 ```sh

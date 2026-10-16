@@ -176,11 +176,21 @@
 				<h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">
 					7. Data security and storage location
 				</h2>
-				<p class="mt-2">
-					All data is stored locally on the server operated by the data controller. We do not share,
-					sell, or transfer your personal data to third parties. No international data transfers
-					take place.
-				</p>
+				{#if data.forwardsToNotifications}
+					<p class="mt-2">
+						All data is stored on the server operated by the data controller. When you book, cancel,
+						or submit your availability, your name, email address, and booking details are also
+						forwarded to the data controller's own workflow-automation service (e.g. Microsoft Power
+						Automate) so the researcher is notified and can email you. We do not sell your personal
+						data or share it with any other third parties.
+					</p>
+				{:else}
+					<p class="mt-2">
+						All data is stored locally on the server operated by the data controller. We do not
+						share, sell, or transfer your personal data to third parties. No international data
+						transfers take place.
+					</p>
+				{/if}
 				<p class="mt-2">
 					The server uses HTTPS to encrypt data in transit. Access to the admin interface is
 					password-protected.

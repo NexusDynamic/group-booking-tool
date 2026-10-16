@@ -6,6 +6,7 @@ import { generateToken, hashToken } from './tokens';
 import { expandTemplate } from './recurrence';
 import { isOpenStatus } from './session-status';
 import { CLINIC_TZ } from './time';
+import { emitEvent } from './webhooks';
 
 export type BookingPreference = typeof bookingPreferences.$inferSelect;
 
@@ -69,6 +70,13 @@ async function insertPreference(
 			...kindColumns
 		})
 		.returning();
+
+	emitEvent({
+		event: 'preference.created',
+		experimentId: preference.experimentId,
+		preference: { id: preference.id, kind: preference.kind },
+		participant: { name: input.name, email: input.email, manageToken: rawToken }
+	});
 
 	return { preference, rawToken };
 }
@@ -154,6 +162,13 @@ export async function withdrawPreferenceByToken(
 		.update(bookingPreferences)
 		.set({ status: 'withdrawn', updatedAt: new Date() })
 		.where(eq(bookingPreferences.id, pref.id));
+
+	emitEvent({
+		event: 'preference.withdrawn',
+		experimentId: pref.experimentId,
+		preference: { id: pref.id, kind: pref.kind },
+		participant: { name: pref.snapshotName, email: pref.snapshotEmail }
+	});
 }
 
 /**
@@ -267,7 +282,8 @@ export async function assignPreferenceToSessions(
 				participantId: pref.participantId,
 				snapshotName: pref.snapshotName,
 				snapshotEmail: pref.snapshotEmail,
-				snapshotFields: JSON.parse(pref.snapshotFields || '{}')
+				snapshotFields: JSON.parse(pref.snapshotFields || '{}'),
+				source: 'admin'
 			});
 			created++;
 		} catch (err) {

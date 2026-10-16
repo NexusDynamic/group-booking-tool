@@ -24,5 +24,9 @@ export const variables = defineEnvVars({
 	LOG_FILE: { schema: optional },
 	CLINIC_TZ: { schema: optional },
 	CLINIC_LOCALE: { schema: optional },
-	DATABASE_URL: { schema: optional }
+	DATABASE_URL: { schema: optional },
+	// Power Automate (or any HTTP) webhook. Empty disables webhooks entirely.
+	WEBHOOK_URL: { schema: optional },
+	// Only when true do webhook payloads carry participant name / email / manage link.
+	WEBHOOK_INCLUDE_PII: { schema: (input) => input === 'true' || input === '1' }
 });

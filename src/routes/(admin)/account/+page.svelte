@@ -71,3 +71,26 @@
 		<button type="submit" class={btnPrimary}>Change password</button>
 	</form>
 </section>
+
+{#if data.webhook.enabled}
+	<section class="mt-8 max-w-md">
+		<h2 class="text-lg font-semibold">Webhook</h2>
+		<p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+			Booking events are sent to the URL in <code>WEBHOOK_URL</code>. Participant details are
+			{data.webhook.includePii ? 'included' : 'not included'}
+			(<code>WEBHOOK_INCLUDE_PII</code>). The test sends a <code>webhook.test</code> event with example
+			values in the same shape as real events, which you can use as the sample payload for a “Parse JSON”
+			step.
+		</p>
+
+		{#if form?.webhookTest}
+			<Alert variant={form.webhookTest.ok ? 'success' : 'error'} class="mt-3">
+				{form.webhookTest.message}
+			</Alert>
+		{/if}
+
+		<form method="post" action="?/testWebhook" use:enhance class="mt-4">
+			<button type="submit" class={btnPrimary}>Send test webhook</button>
+		</form>
+	</section>
+{/if}

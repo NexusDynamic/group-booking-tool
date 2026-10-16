@@ -2,10 +2,15 @@ import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import { auth } from '#lib/server/auth.js';
 import { zodErrors } from '#lib/server/validate.js';
+import { sendTestWebhook, webhooksEnabled } from '#lib/server/webhooks.js';
+import { WEBHOOK_INCLUDE_PII } from '$app/env/private';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals }) => {
-	return { user: locals.user! };
+	return {
+		user: locals.user!,
+		webhook: { enabled: webhooksEnabled(), includePii: WEBHOOK_INCLUDE_PII }
+	};
 };
 
 const changePasswordSchema = z
@@ -43,5 +48,11 @@ export const actions: Actions = {
 			return fail(400, { errors: { _: message } as Record<string, string> });
 		}
 		return { changed: true };
+	},
+	testWebhook: async () => {
+		const result = await sendTestWebhook();
+		return result.ok
+			? { webhookTest: { ok: true, message: `Delivered (HTTP ${result.status}).` } }
+			: fail(502, { webhookTest: { ok: false, message: result.error ?? 'Delivery failed' } });
 	}
 };

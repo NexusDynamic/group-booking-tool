@@ -29,10 +29,15 @@ export type Executor = typeof db | Tx;
  *
  * Every non-cancelled booking counts, so marking attendance after the
  * session has run does not flip it back to `scheduled`.
+ *
+ * Returns the transition when the status changed, otherwise `null`.
  */
-export function syncSessionStatus(tx: Executor, sessionId: string): void {
+export function syncSessionStatus(
+	tx: Executor,
+	sessionId: string
+): { from: string; to: 'scheduled' | 'confirmed' } | null {
 	const session = tx.select().from(sessions).where(eq(sessions.id, sessionId)).all()[0];
-	if (!session || !isOpenStatus(session.status)) return;
+	if (!session || !isOpenStatus(session.status)) return null;
 
 	const rows = tx
 		.select({ n: sql<number>`count(*)` })
@@ -47,5 +52,7 @@ export function syncSessionStatus(tx: Executor, sessionId: string): void {
 			.set({ status, updatedAt: new Date() })
 			.where(eq(sessions.id, sessionId))
 			.run();
+		return { from: session.status, to: status };
 	}
+	return null;
 }

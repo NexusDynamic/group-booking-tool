@@ -5,6 +5,7 @@ import { priorAttendanceExists } from './exclusions';
 import { isOpenStatus, syncSessionStatus } from './session-status';
 import { generateToken, hashToken } from './tokens';
 import { normaliseEmail } from './validate';
+import { emitEvent, type BookingSource } from './webhooks';
 
 export type Booking = typeof bookings.$inferSelect;
 export type Participant = typeof participants.$inferSelect;
@@ -77,6 +78,8 @@ export interface CreateBookingInput {
 	snapshotName: string;
 	snapshotEmail: string;
 	snapshotFields: Record<string, unknown>;
+	/** Who made the booking; reported in the webhook. Defaults to `public`. */
+	source?: BookingSource;
 }
 
 export interface CreateBookingResult {
@@ -108,12 +111,15 @@ function confirmedCount(tx: Parameters<typeof syncSessionStatus>[0], sessionId: 
  *
  * The raw token is returned only from this function — after this call it
  * lives solely in the URL the caller embeds in the response.
+ *
+ * Webhooks are queued only after the transaction commits and cannot fail
+ * the booking (see webhooks.ts).
  */
 export async function createBooking(input: CreateBookingInput): Promise<CreateBookingResult> {
 	const rawToken = generateToken();
 	const manageTokenHash = hashToken(rawToken);
 
-	const booking = db.transaction((tx) => {
+	const { booking, transition, full } = db.transaction((tx) => {
 		const session = tx.select().from(sessions).where(eq(sessions.id, input.sessionId)).all()[0];
 		if (!session || session.experimentId !== input.experimentId) {
 			throw new BookingStateError('This session is not available.');
@@ -165,9 +171,22 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
 			})
 			.returning()
 			.all();
-		syncSessionStatus(tx, session.id);
-		return row;
+		return {
+			booking: row,
+			transition: syncSessionStatus(tx, session.id),
+			full: confirmedCount(tx, session.id) >= session.capacity
+		};
 	});
+
+	const base = { experimentId: input.experimentId, sessionId: input.sessionId };
+	emitEvent({
+		...base,
+		event: 'booking.created',
+		booking: { id: booking.id, source: input.source ?? 'public' },
+		participant: { name: input.snapshotName, email: input.snapshotEmail, manageToken: rawToken }
+	});
+	if (transition?.to === 'confirmed') emitEvent({ ...base, event: 'session.minimum_reached' });
+	if (full) emitEvent({ ...base, event: 'session.full' });
 
 	return { booking, rawToken };
 }
@@ -198,22 +217,22 @@ export async function cancelBookingByToken(
 	experimentId?: string
 ): Promise<Booking> {
 	const manageTokenHash = hashToken(rawToken);
-	return db.transaction((tx) => {
+	const { booking, changed } = db.transaction((tx) => {
 		const booking = tx
 			.select()
 			.from(bookings)
 			.where(eq(bookings.manageTokenHash, manageTokenHash))
 			.all()[0];
 		if (!booking) throw new BookingStateError('Booking not found');
-		if (experimentId !== undefined) {
-			const session = tx
-				.select({ experimentId: sessions.experimentId })
-				.from(sessions)
-				.where(eq(sessions.id, booking.sessionId))
-				.all()[0];
-			if (session?.experimentId !== experimentId) throw new BookingStateError('Booking not found');
+		const session = tx
+			.select({ experimentId: sessions.experimentId })
+			.from(sessions)
+			.where(eq(sessions.id, booking.sessionId))
+			.all()[0];
+		if (!session || (experimentId !== undefined && session.experimentId !== experimentId)) {
+			throw new BookingStateError('Booking not found');
 		}
-		if (booking.status === 'cancelled') return booking;
+		if (booking.status === 'cancelled') return { booking, changed: null };
 		if (booking.status === 'attended' || booking.status === 'no_show') {
 			throw new BookingStateError(`Cannot cancel — booking is ${booking.status}`);
 		}
@@ -224,9 +243,23 @@ export async function cancelBookingByToken(
 			.where(eq(bookings.id, booking.id))
 			.returning()
 			.all();
-		syncSessionStatus(tx, booking.sessionId);
-		return updated;
+		const transition = syncSessionStatus(tx, booking.sessionId);
+		return { booking: updated, changed: { experimentId: session.experimentId, transition } };
 	});
+
+	if (changed) {
+		const base = { experimentId: changed.experimentId, sessionId: booking.sessionId };
+		emitEvent({
+			...base,
+			event: 'booking.cancelled',
+			booking: { id: booking.id, source: 'public' },
+			participant: { name: booking.snapshotName, email: booking.snapshotEmail }
+		});
+		if (changed.transition?.to === 'scheduled') {
+			emitEvent({ ...base, event: 'session.below_minimum' });
+		}
+	}
+	return booking;
 }
 
 /** Lookup bookings for a given session in newest-first order. */
