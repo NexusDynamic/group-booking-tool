@@ -43,8 +43,13 @@ vi.mock('./log', () => ({
 }));
 
 const { createBooking, cancelBookingByToken, upsertParticipant } = await import('./bookings');
-const { assignPreferenceToSessions, createSessionListPreference, withdrawPreferenceByToken } =
-	await import('./preferences');
+const {
+	assignPreferenceToSessions,
+	createRecurringPreference,
+	createSessionListPreference,
+	withdrawPreferenceByToken
+} = await import('./preferences');
+const { cancelSession } = await import('./sessions');
 const { emitEvent, flushWebhooks, sendTestWebhook } = await import('./webhooks');
 
 const fetchMock = vi.fn();
@@ -72,18 +77,25 @@ function seedExperiment(id = 'exp-1') {
 		.run(id, `slug-${id}`, 'Fun Experiment', 60, `pub-${id}`, `res-${id}`);
 }
 
-function seedSession(id: string, experimentId: string, capacity: number, minParticipants = 1) {
+function seedSession(
+	id: string,
+	experimentId: string,
+	capacity: number,
+	minParticipants = 1,
+	{ startsAt = Date.now() + 86_400_000, status = 'scheduled' } = {}
+) {
 	client
 		.prepare(
-			'INSERT INTO sessions (id, experiment_id, starts_at, ends_at, capacity, min_participants, public_ics_token) VALUES (?, ?, ?, ?, ?, ?, ?)'
+			'INSERT INTO sessions (id, experiment_id, starts_at, ends_at, capacity, min_participants, status, public_ics_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
 		)
 		.run(
 			id,
 			experimentId,
-			Date.now() + 86_400_000,
-			Date.now() + 86_400_000 + 3_600_000,
+			startsAt,
+			startsAt + 3_600_000,
 			capacity,
 			minParticipants,
+			status,
 			`pub-${id}`
 		);
 }
@@ -130,10 +142,24 @@ describe('webhooks', () => {
 				name: 'Fun Experiment',
 				adminUrl: 'https://booking.example.org/experiments/exp-1'
 			},
-			session: { id: 's1', booked: 1, minParticipants: 2, capacity: 3, status: 'scheduled' },
-			booking: { id: booking.id, source: 'public' }
+			session: {
+				id: 's1',
+				booked: 1,
+				minParticipants: 2,
+				capacity: 3,
+				seats: '1/3',
+				state: 'below_minimum',
+				status: 'scheduled',
+				milestones: [],
+				adminUrl: 'https://booking.example.org/experiments/exp-1/sessions/s1'
+			},
+			booking: { id: booking.id, source: 'public' },
+			upcoming: [{ id: 's1', seats: '1/3' }]
 		});
 		expect(event).not.toHaveProperty('participant');
+		expect(event.summary).toMatch(/^New booking · Fun Experiment · .+ \(1\/3\)$/);
+		expect(event.adaptiveCard).toMatchObject({ type: 'AdaptiveCard', version: '1.4' });
+		expect(JSON.stringify(event.adaptiveCard)).not.toContain('a@x.com');
 	});
 
 	it('includes participant details and a working manage link when PII is enabled', async () => {
@@ -150,21 +176,44 @@ describe('webhooks', () => {
 		});
 	});
 
-	it('reports when a session reaches its minimum, fills up, and drops below minimum', async () => {
+	it('reports milestones on a single event per booking change', async () => {
 		seedExperiment();
 		seedSession('s1', 'exp-1', 2, 2);
 		await book('s1', 'a@x.com');
 		const { rawToken } = await book('s1', 'b@x.com');
 		await cancelBookingByToken(rawToken);
 
-		expect((await sent()).map((e) => e.event)).toEqual([
-			'booking.created',
-			'booking.created',
-			'session.minimum_reached',
-			'session.full',
-			'booking.cancelled',
-			'session.below_minimum'
+		const events = await sent();
+		expect(events.map((e) => [e.event, e.session.seats, e.session.milestones])).toEqual([
+			['booking.created', '1/2', []],
+			['booking.created', '2/2', ['minimum_reached', 'full']],
+			['booking.cancelled', '1/2', ['below_minimum', 'no_longer_full']]
 		]);
+		expect(events[1].session.state).toBe('full');
+		expect(JSON.stringify(events[1].adaptiveCard)).toContain('Minimum reached');
+	});
+
+	it('lists the next 5 open upcoming sessions in order, with counts and waiting', async () => {
+		seedExperiment();
+		const day = 86_400_000;
+		seedSession('past', 'exp-1', 3, 1, { startsAt: Date.now() - day });
+		seedSession('gone', 'exp-1', 3, 1, { startsAt: Date.now() + day, status: 'cancelled' });
+		for (let i = 7; i >= 1; i--) {
+			seedSession(`s${i}`, 'exp-1', 4, 2, { startsAt: Date.now() + i * day });
+		}
+		await createSessionListPreference({
+			experimentId: 'exp-1',
+			name: 'Pat',
+			email: 'pat@x.com',
+			sessionIds: ['s2', 's3'],
+			notes: ''
+		});
+		await book('s1', 'a@x.com');
+
+		const event = (await sent()).at(-1)!;
+		expect(event.upcoming.map((s: { id: string }) => s.id)).toEqual(['s1', 's2', 's3', 's4', 's5']);
+		expect(event.upcoming[0]).toMatchObject({ seats: '1/4', state: 'below_minimum', waiting: 0 });
+		expect(event.upcoming[1]).toMatchObject({ seats: '0/4', waiting: 1 });
 	});
 
 	it('does not re-send when an already-cancelled booking is cancelled again', async () => {
@@ -174,6 +223,59 @@ describe('webhooks', () => {
 		await cancelBookingByToken(rawToken);
 		await cancelBookingByToken(rawToken);
 		expect((await sent()).map((e) => e.event)).toEqual(['booking.created', 'booking.cancelled']);
+	});
+
+	it('reports session.cancelled once, with who was booked only when PII is enabled', async () => {
+		seedExperiment();
+		seedSession('s1', 'exp-1', 4, 2);
+		seedSession('s2', 'exp-1', 4, 2, { startsAt: Date.now() + 2 * 86_400_000 });
+		await book('s1', 'a@x.com');
+		const { rawToken } = await book('s1', 'b@x.com');
+		await cancelBookingByToken(rawToken);
+		await flushWebhooks();
+		fetchMock.mockClear();
+
+		expect(await cancelSession('s1', 'exp-1')).toBe(true);
+		expect(await cancelSession('s1', 'exp-1')).toBe(true); // already cancelled: no event
+		expect(await cancelSession('s1', 'exp-other')).toBe(false);
+
+		const events = await sent();
+		expect(events).toHaveLength(1);
+		expect(events[0]).toMatchObject({
+			event: 'session.cancelled',
+			session: { id: 's1', status: 'cancelled', booked: 1 }
+		});
+		expect(events[0]).not.toHaveProperty('affectedParticipants');
+		// The cancelled session drops out of the upcoming list.
+		expect(events[0].upcoming.map((u: { id: string }) => u.id)).toEqual(['s2']);
+		const card = JSON.stringify(events[0].adaptiveCard);
+		expect(card).toContain('Session cancelled');
+		expect(card).toContain('1 participant was booked');
+		expect(card).not.toContain('a@x.com');
+
+		env.WEBHOOK_INCLUDE_PII = true;
+		await flushWebhooks();
+		fetchMock.mockClear();
+		await cancelSession('s2', 'exp-1');
+		expect((await sent())[0].affectedParticipants).toEqual([]);
+	});
+
+	it('lists affected participants on session.cancelled when PII is enabled', async () => {
+		env.WEBHOOK_INCLUDE_PII = true;
+		seedExperiment();
+		seedSession('s1', 'exp-1', 4, 2);
+		await book('s1', 'a@x.com');
+		await book('s1', 'b@x.com');
+		await flushWebhooks();
+		fetchMock.mockClear();
+		await cancelSession('s1', 'exp-1');
+
+		const [event] = await sent();
+		expect(event.affectedParticipants).toEqual([
+			{ name: 'Name a@x.com', email: 'a@x.com' },
+			{ name: 'Name b@x.com', email: 'b@x.com' }
+		]);
+		expect(JSON.stringify(event.adaptiveCard)).toContain('b@x.com');
 	});
 
 	it('reports preference create / withdraw with the pending count, and admin assignment', async () => {
@@ -203,10 +305,12 @@ describe('webhooks', () => {
 			'preference.created',
 			'booking.created'
 		]);
-		expect(events[0].preference).toEqual({
+		expect(events[0].preference).toMatchObject({
 			id: preference.id,
 			kind: 'session_list',
-			pendingCount: 1
+			pendingCount: 1,
+			sessions: [{ id: 's1', seats: '0/3', state: 'below_minimum' }],
+			moreCount: 0
 		});
 		expect(events[0].participant.manageUrl).toBe(
 			`https://booking.example.org/e/slug-exp-1/preference/${rawToken}`
@@ -228,6 +332,40 @@ describe('webhooks', () => {
 		const events = await sent();
 		expect(events.map((e) => e.event)).toEqual(['preference.created', 'preference.withdrawn']);
 		expect(events[1].preference.pendingCount).toBe(0);
+	});
+
+	it('describes a recurring preference with its pattern and matching sessions', async () => {
+		seedExperiment();
+		// Next Monday 09:00 Copenhagen, and the Monday after; a Tuesday that should not match.
+		const { localToUtc } = await import('./time');
+		const monday = new Date();
+		monday.setUTCDate(monday.getUTCDate() + ((8 - monday.getUTCDay()) % 7 || 7));
+		const ymd = monday.toISOString().slice(0, 10);
+		const at = (daysLater: number) => {
+			const d = new Date(`${ymd}T00:00Z`);
+			d.setUTCDate(d.getUTCDate() + daysLater);
+			// Wall-clock 09:00 in the clinic timezone, so DST changes don't shift it.
+			return localToUtc(`${d.toISOString().slice(0, 10)}T09:00`).getTime();
+		};
+		seedSession('mon1', 'exp-1', 4, 2, { startsAt: at(0) });
+		seedSession('mon2', 'exp-1', 4, 2, { startsAt: at(7) });
+		seedSession('tue', 'exp-1', 4, 2, { startsAt: at(1) });
+
+		await createRecurringPreference({
+			experimentId: 'exp-1',
+			name: 'Pat',
+			email: 'pat@x.com',
+			rrule: 'FREQ=WEEKLY;BYDAY=MO',
+			dtstartLocal: `${ymd}T09:00`,
+			durationMinutes: 60,
+			notes: ''
+		});
+
+		const [event] = await sent();
+		expect(event.preference.kind).toBe('recurring');
+		expect(event.preference.pattern).toMatch(/09:00–10:00/);
+		expect(event.preference.sessions.map((s: { id: string }) => s.id)).toEqual(['mon1', 'mon2']);
+		expect(event.summary).toContain(event.preference.pattern);
 	});
 
 	describe('never interferes with booking', () => {
@@ -289,6 +427,8 @@ describe('webhooks', () => {
 			const body = JSON.parse(fetchMock.mock.calls[0][1].body);
 			expect(body.event).toBe('webhook.test');
 			expect(body).not.toHaveProperty('participant');
+			expect(body.upcoming.length).toBeGreaterThan(0);
+			expect(body.adaptiveCard).toMatchObject({ type: 'AdaptiveCard', version: '1.4' });
 		});
 
 		it('reports failure without throwing', async () => {

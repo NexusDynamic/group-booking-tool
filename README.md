@@ -196,15 +196,23 @@ that you may want to act on. A Microsoft Power Automate flow starting with
 Premium licence); the URL it gives you already contains a secret `sig=`
 parameter, so treat it like a password.
 
-| Event                     | When                                                                                             |
-| ------------------------- | ------------------------------------------------------------------------------------------------ |
-| `booking.created`         | A participant books, or you assign a waiting preference (`booking.source` is `public` / `admin`) |
-| `booking.cancelled`       | A participant cancels from their link                                                            |
-| `session.minimum_reached` | A booking brings a session to its minimum — it will run                                          |
-| `session.full`            | A booking fills the last seat — time to confirm with participants                                |
-| `session.below_minimum`   | A participant cancellation drops a session below its minimum                                     |
-| `preference.created`      | Someone submits availability and is waiting to be assigned (`preference.pendingCount`)           |
-| `preference.withdrawn`    | A participant withdraws a pending preference                                                     |
+| Event                  | When                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------ |
+| `booking.created`      | A participant books, or you assign a waiting preference (`booking.source` is `public` / `admin`) |
+| `booking.cancelled`    | A participant cancels from their link                                                            |
+| `preference.created`   | Someone submits availability and is waiting to be assigned                                       |
+| `preference.withdrawn` | A participant withdraws a pending preference                                                     |
+| `session.cancelled`    | You cancel a session in the admin (`session.booked` says how many people need telling)           |
+
+Each change sends exactly one event. Thresholds it crossed are listed in
+`session.milestones`:
+
+| Milestone         | Meaning                                                      |
+| ----------------- | ------------------------------------------------------------ |
+| `minimum_reached` | The booking brought the session to its minimum — it will run |
+| `full`            | The booking filled the last seat — confirm with participants |
+| `below_minimum`   | The cancellation dropped the session below its minimum       |
+| `no_longer_full`  | The cancellation freed a seat on a full session              |
 
 Payload shape (fields present depend on the event):
 
@@ -212,30 +220,70 @@ Payload shape (fields present depend on the event):
 {
 	"event": "booking.created",
 	"occurredAt": "2026-10-16T08:00:00.000Z",
+	"summary": "New booking · Fun Experiment · lør. 17. okt. 10.00 (3/6, minimum reached)",
 	"experiment": { "id": "…", "name": "Fun Experiment", "slug": "fun", "adminUrl": "https://…" },
 	"session": {
 		"id": "…",
 		"startsAt": "…",
 		"endsAt": "…",
 		"startsAtLocal": "17. okt. 2026 10.00",
+		"when": "lør. 17. okt. 10.00",
 		"location": "Lab 1",
-		"booked": 2,
+		"booked": 3,
 		"minParticipants": 3,
-		"capacity": 5,
-		"status": "scheduled",
+		"capacity": 6,
+		"seats": "3/6",
+		"state": "ok",
+		"status": "confirmed",
+		"waiting": 1,
+		"milestones": ["minimum_reached"],
 		"adminUrl": "https://…"
 	},
 	"booking": { "id": "…", "source": "public" },
-	"preference": { "id": "…", "kind": "recurring", "pendingCount": 1 },
-	"participant": { "name": "…", "email": "…", "manageUrl": "https://…" }
+	"preference": {
+		"id": "…",
+		"kind": "recurring",
+		"pendingCount": 2,
+		"pattern": "mandag 09:00–10:00, 1. jun. 2026 – 30. jun. 2026",
+		"windowStart": "…",
+		"windowEnd": "…",
+		"sessions": [{ "id": "…", "when": "…", "seats": "2/6", "state": "below_minimum", "…": "…" }],
+		"moreCount": 0
+	},
+	"upcoming": [{ "id": "…", "when": "…", "seats": "3/6", "state": "ok", "waiting": 1, "…": "…" }],
+	"participant": { "name": "…", "email": "…", "manageUrl": "https://…" },
+	"adaptiveCard": { "type": "AdaptiveCard", "version": "1.4", "…": "…" }
 }
 ```
 
-`participant` is only sent when `WEBHOOK_INCLUDE_PII=true`. With it on, a flow
-can email the participant their `manageUrl` from your own Outlook account
-(so they can't lose their link); the `/privacy` page then states that details
-are forwarded, and you should mention it in each experiment's privacy notice.
-URLs are absolute only when `ORIGIN` is set.
+- `state` is `below_minimum`, `ok` (minimum met) or `full`. `waiting` is the
+  number of pending availability submissions that match that session, so you
+  can see which thin sessions could be filled from the queue.
+- `upcoming` holds the next 5 open sessions of the experiment, with counts
+  taken right after the change.
+- `preference.sessions` holds the upcoming open sessions a submission covers
+  (the chosen sessions, or those matching the recurring pattern and date range;
+  at most 10, with the rest counted in `moreCount`). `pattern` is only set for
+  recurring submissions.
+- `affectedParticipants` (`session.cancelled` only, and only with
+  `WEBHOOK_INCLUDE_PII=true`) lists the name and email of everyone still
+  booked on the cancelled session, so a flow can notify them.
+- `adaptiveCard` is a ready-made Microsoft Teams card showing all of the
+  above. `summary` is the same information as one line of plain text.
+
+**Posting to Teams:** after the trigger, add _Parse JSON_ (generate the schema
+from a test event; mark `session`, `booking`, `preference` and `participant`
+as optional, since not every event has them), then **Post card in a chat or
+channel** with the _Adaptive Card_ field set to the expression
+`string(body('Parse_JSON')?['adaptiveCard'])`. The layout lives in the app
+(`src/lib/server/webhook-card.ts`), so it can change without editing the flow.
+
+`participant` is only sent when `WEBHOOK_INCLUDE_PII=true`, and only then does
+the card show name and email. With it on, a flow can email the participant
+their `manageUrl` from your own Outlook account (so they can't lose their
+link); the `/privacy` page then states that details are forwarded, and you
+should mention it in each experiment's privacy notice. URLs (and the card's
+buttons) are absolute only when `ORIGIN` is set.
 
 Delivery is fire-and-forget: events are sent in the background after the
 change has been saved, with a 10 s timeout and no retries. An unreachable or
@@ -243,10 +291,9 @@ failing endpoint is only logged (`webhook unreachable` / `webhook rejected`)
 and never affects a booking.
 
 The **Account** page has a **Send test webhook** button. It sends a
-`webhook.test` event with example values in the same shape as real events —
-paste it into Power Automate's _Parse JSON_ → _Generate from sample_. (Mark
-fields such as `session` and `participant` as optional in the generated
-schema, since not every event has them.)
+`webhook.test` event with example values in the same shape as real events,
+including a sample card. Paste it into Power Automate's _Parse JSON_ →
+_Generate from sample_.
 
 ## Testing
 

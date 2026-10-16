@@ -23,7 +23,7 @@ const {
 	setBookingStatus,
 	upsertParticipant
 } = await import('./bookings');
-const { updateSession } = await import('./sessions');
+const { cancelSession, updateSession } = await import('./sessions');
 const { hashToken } = await import('./tokens');
 const { hasPriorAttendance } = await import('./exclusions');
 
@@ -339,6 +339,18 @@ describe('createBooking guards', () => {
 		await expect(book('exp-1', 'sess-2')).rejects.toBeInstanceOf(PriorAttendanceError);
 
 		client.prepare('UPDATE experiments SET exclude_prior_attendees = 0').run();
+		await expect(book('exp-1', 'sess-2')).resolves.toBeTruthy();
+	});
+
+	it('lets participants of a cancelled session book another one', async () => {
+		seedExperiment(); // exclude_prior_attendees defaults to true
+		seedSession('sess-1', 'exp-1', 5);
+		seedSession('sess-2', 'exp-1', 5);
+
+		await book('exp-1', 'sess-1');
+		await cancelSession('sess-1', 'exp-1');
+
+		// Their booking on the cancelled session is not prior attendance.
 		await expect(book('exp-1', 'sess-2')).resolves.toBeTruthy();
 	});
 });

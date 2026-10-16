@@ -4,6 +4,7 @@ import { generateToken } from './tokens';
 import { bookings, recurrenceTemplates, sessions } from './db/schema';
 import { expandTemplate } from './recurrence';
 import { syncSessionStatus } from './session-status';
+import { emitEvent } from './webhooks';
 
 export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
@@ -116,8 +117,19 @@ export async function updateSession(
 	});
 }
 
+/** Cancel a session. Emits `session.cancelled`, unless it already was cancelled. */
 export async function cancelSession(id: string, experimentId: string): Promise<boolean> {
-	return updateSession(id, experimentId, { status: 'cancelled' });
+	const previous = db
+		.select({ status: sessions.status })
+		.from(sessions)
+		.where(and(eq(sessions.id, id), eq(sessions.experimentId, experimentId)))
+		.get();
+	if (!previous) return false;
+	const updated = await updateSession(id, experimentId, { status: 'cancelled' });
+	if (updated && previous.status !== 'cancelled') {
+		emitEvent({ event: 'session.cancelled', experimentId, sessionId: id });
+	}
+	return updated;
 }
 
 export async function deleteSession(id: string, experimentId: string): Promise<boolean> {

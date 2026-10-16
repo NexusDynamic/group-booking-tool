@@ -5,7 +5,7 @@ import { priorAttendanceExists } from './exclusions';
 import { isOpenStatus, syncSessionStatus } from './session-status';
 import { generateToken, hashToken } from './tokens';
 import { normaliseEmail } from './validate';
-import { emitEvent, type BookingSource } from './webhooks';
+import { emitEvent, type BookingSource, type Milestone } from './webhooks';
 
 export type Booking = typeof bookings.$inferSelect;
 export type Participant = typeof participants.$inferSelect;
@@ -178,15 +178,17 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
 		};
 	});
 
-	const base = { experimentId: input.experimentId, sessionId: input.sessionId };
+	const milestones: Milestone[] = [];
+	if (transition?.to === 'confirmed') milestones.push('minimum_reached');
+	if (full) milestones.push('full');
 	emitEvent({
-		...base,
 		event: 'booking.created',
+		experimentId: input.experimentId,
+		sessionId: input.sessionId,
+		milestones,
 		booking: { id: booking.id, source: input.source ?? 'public' },
 		participant: { name: input.snapshotName, email: input.snapshotEmail, manageToken: rawToken }
 	});
-	if (transition?.to === 'confirmed') emitEvent({ ...base, event: 'session.minimum_reached' });
-	if (full) emitEvent({ ...base, event: 'session.full' });
 
 	return { booking, rawToken };
 }
@@ -225,7 +227,7 @@ export async function cancelBookingByToken(
 			.all()[0];
 		if (!booking) throw new BookingStateError('Booking not found');
 		const session = tx
-			.select({ experimentId: sessions.experimentId })
+			.select({ experimentId: sessions.experimentId, capacity: sessions.capacity })
 			.from(sessions)
 			.where(eq(sessions.id, booking.sessionId))
 			.all()[0];
@@ -236,6 +238,7 @@ export async function cancelBookingByToken(
 		if (booking.status === 'attended' || booking.status === 'no_show') {
 			throw new BookingStateError(`Cannot cancel — booking is ${booking.status}`);
 		}
+		const wasFull = confirmedCount(tx, booking.sessionId) >= session.capacity;
 
 		const [updated] = tx
 			.update(bookings)
@@ -244,20 +247,21 @@ export async function cancelBookingByToken(
 			.returning()
 			.all();
 		const transition = syncSessionStatus(tx, booking.sessionId);
-		return { booking: updated, changed: { experimentId: session.experimentId, transition } };
+		const milestones: Milestone[] = [];
+		if (transition?.to === 'scheduled') milestones.push('below_minimum');
+		if (wasFull) milestones.push('no_longer_full');
+		return { booking: updated, changed: { experimentId: session.experimentId, milestones } };
 	});
 
 	if (changed) {
-		const base = { experimentId: changed.experimentId, sessionId: booking.sessionId };
 		emitEvent({
-			...base,
 			event: 'booking.cancelled',
+			experimentId: changed.experimentId,
+			sessionId: booking.sessionId,
+			milestones: changed.milestones,
 			booking: { id: booking.id, source: 'public' },
 			participant: { name: booking.snapshotName, email: booking.snapshotEmail }
 		});
-		if (changed.transition?.to === 'scheduled') {
-			emitEvent({ ...base, event: 'session.below_minimum' });
-		}
 	}
 	return booking;
 }

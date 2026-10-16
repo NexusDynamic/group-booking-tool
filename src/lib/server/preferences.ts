@@ -181,15 +181,24 @@ export async function withdrawPreferenceByToken(
  *
  * For `session_list` preferences: just fetch those session ids.
  */
-export async function suggestMatchingSessions(
-	pref: BookingPreference
-): Promise<Array<{ id: string; startsAt: Date; endsAt: Date; capacity: number }>> {
+export async function suggestMatchingSessions(pref: BookingPreference): Promise<MatchedSession[]> {
+	return matchSessionsNow(pref);
+}
+
+type MatchedSession = { id: string; startsAt: Date; endsAt: Date; capacity: number };
+
+/**
+ * Synchronous core of `suggestMatchingSessions` (better-sqlite3 runs queries
+ * synchronously), for callers that need a consistent snapshot without
+ * yielding — see webhooks.ts.
+ */
+export function matchSessionsNow(pref: BookingPreference): MatchedSession[] {
 	const now = new Date();
 
 	if (pref.kind === 'session_list') {
 		const ids = parseSessionIds(pref.preferredSessionIds);
 		if (ids.length === 0) return [];
-		const rows = await db
+		const rows = db
 			.select({
 				id: sessions.id,
 				startsAt: sessions.startsAt,
@@ -205,7 +214,8 @@ export async function suggestMatchingSessions(
 					gte(sessions.startsAt, now)
 				)
 			)
-			.orderBy(asc(sessions.startsAt));
+			.orderBy(asc(sessions.startsAt))
+			.all();
 		return rows.filter((r) => isOpenStatus(r.status));
 	}
 
@@ -225,7 +235,7 @@ export async function suggestMatchingSessions(
 	if (expanded.length === 0) return [];
 
 	// Find open sessions within the window for this experiment.
-	const candidates = await db
+	const candidates = db
 		.select({
 			id: sessions.id,
 			startsAt: sessions.startsAt,
@@ -235,7 +245,8 @@ export async function suggestMatchingSessions(
 		})
 		.from(sessions)
 		.where(and(eq(sessions.experimentId, pref.experimentId), gte(sessions.startsAt, windowStart)))
-		.orderBy(asc(sessions.startsAt));
+		.orderBy(asc(sessions.startsAt))
+		.all();
 
 	const expandedMs = new Set(expanded.map((e) => e.startsAt.getTime()));
 	const tolerance = 60 * 1000; // ±1 minute
