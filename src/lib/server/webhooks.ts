@@ -192,8 +192,21 @@ async function send(body: WebhookPayload): Promise<WebhookResult> {
 	}
 }
 
-function absoluteUrl(path: string): string | null {
-	return ORIGIN ? `${ORIGIN.replace(/\/$/, '')}${path}` : null;
+function absoluteUrl(resolved: string): string | null {
+	return ORIGIN ? joinUrl(ORIGIN, __BASE_PATH__, resolved) : null;
+}
+
+/**
+ * Turn a `resolve()` result into an absolute URL. While a request is being
+ * handled, `resolve()` returns a path relative to the current page
+ * (`paths.relative`), e.g. `../experiments/x`, which loses the base path; so
+ * strip that prefix and add the (absolute) `base` back.
+ */
+export function joinUrl(origin: string, basePath: string, resolved: string): string {
+	const path = resolved.startsWith('/')
+		? resolved
+		: basePath + resolved.replace(/^(?:\.\.?\/)*\.{1,2}(?=\/)/, '');
+	return `${origin.replace(/\/$/, '')}${path}`;
 }
 
 function sessionAdminUrl(experimentId: string, sessionId: string): string | null {

@@ -50,7 +50,7 @@ const {
 	withdrawPreferenceByToken
 } = await import('./preferences');
 const { cancelSession } = await import('./sessions');
-const { emitEvent, flushWebhooks, sendTestWebhook } = await import('./webhooks');
+const { emitEvent, flushWebhooks, joinUrl, sendTestWebhook } = await import('./webhooks');
 
 const fetchMock = vi.fn();
 
@@ -418,6 +418,23 @@ describe('webhooks', () => {
 				'webhook payload failed',
 				expect.objectContaining({ event: 'booking.created' })
 			);
+		});
+	});
+
+	describe('joinUrl', () => {
+		it.each([
+			// resolve() outside a request: already absolute, base included
+			['/booking/experiments/x', 'https://u.dk/booking/experiments/x'],
+			// resolve() during a request (paths.relative): relative to the current page
+			['./experiments/x', 'https://u.dk/booking/experiments/x'],
+			['../experiments/x', 'https://u.dk/booking/experiments/x'],
+			['../../experiments/x/sessions/s', 'https://u.dk/booking/experiments/x/sessions/s']
+		])('%s', (resolved, expected) => {
+			expect(joinUrl('https://u.dk/', '/booking', resolved)).toBe(expected);
+		});
+
+		it('works without a base path', () => {
+			expect(joinUrl('https://u.dk', '', './e/fun/booked/t')).toBe('https://u.dk/e/fun/booked/t');
 		});
 	});
 

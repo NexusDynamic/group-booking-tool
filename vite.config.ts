@@ -20,6 +20,11 @@ const base = (process.env.BASE_URL ?? '') as '' | `/${string}`;
 const origin = process.env.ORIGIN || undefined;
 
 export default defineConfig(({ command, mode }) => ({
+	define: {
+		// The same base path, for server code that builds absolute URLs outside
+		// the page (webhooks); SvelteKit no longer exports it from $app/paths.
+		__BASE_PATH__: JSON.stringify(mode === 'test' ? '' : base)
+	},
 	plugins: [
 		tailwindcss(),
 		sveltekit({

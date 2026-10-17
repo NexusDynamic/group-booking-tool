@@ -271,12 +271,69 @@ Payload shape (fields present depend on the event):
 - `adaptiveCard` is a ready-made Microsoft Teams card showing all of the
   above. `summary` is the same information as one line of plain text.
 
-**Posting to Teams:** after the trigger, add _Parse JSON_ (generate the schema
-from a test event; mark `session`, `booking`, `preference` and `participant`
-as optional, since not every event has them), then **Post card in a chat or
+**Posting to Teams:** after the trigger, add **Post card in a chat or
 channel** with the _Adaptive Card_ field set to the expression
-`string(body('Parse_JSON')?['adaptiveCard'])`. The layout lives in the app
-(`src/lib/server/webhook-card.ts`), so it can change without editing the flow.
+`string(triggerBody()?['adaptiveCard'])`. No _Parse JSON_ step is needed for
+that. The layout lives in the app (`src/lib/server/webhook-card.ts`), so it can
+change without editing the flow.
+
+If you also want to use payload fields in the flow (conditions on `event`,
+emailing `participant.email`, …), add _Parse JSON_ with the schema below rather
+than _Generate from sample_. A generated schema copies one example too
+literally: it marks fields of the free-form card as required and types URLs as
+plain strings, so real events fail to parse. This one leaves the card and
+event-specific parts open and allows `null` where the app may send it:
+
+```json
+{
+	"type": "object",
+	"properties": {
+		"event": { "type": "string" },
+		"occurredAt": { "type": "string" },
+		"summary": { "type": "string" },
+		"experiment": {
+			"type": "object",
+			"properties": {
+				"id": { "type": "string" },
+				"name": { "type": "string" },
+				"slug": { "type": "string" },
+				"adminUrl": { "type": ["string", "null"] }
+			}
+		},
+		"session": {
+			"type": "object",
+			"properties": {
+				"id": { "type": "string" },
+				"startsAt": { "type": "string" },
+				"when": { "type": "string" },
+				"location": { "type": "string" },
+				"booked": { "type": "integer" },
+				"minParticipants": { "type": "integer" },
+				"capacity": { "type": "integer" },
+				"seats": { "type": "string" },
+				"state": { "type": "string" },
+				"status": { "type": "string" },
+				"milestones": { "type": "array", "items": { "type": "string" } },
+				"adminUrl": { "type": ["string", "null"] }
+			}
+		},
+		"booking": { "type": "object" },
+		"preference": { "type": "object" },
+		"upcoming": { "type": "array" },
+		"participant": {
+			"type": "object",
+			"properties": {
+				"name": { "type": "string" },
+				"email": { "type": "string" },
+				"manageUrl": { "type": ["string", "null"] }
+			}
+		},
+		"affectedParticipants": { "type": "array" },
+		"adaptiveCard": { "type": "object" }
+	},
+	"required": ["event", "experiment", "adaptiveCard"]
+}
+```
 
 `participant` is only sent when `WEBHOOK_INCLUDE_PII=true`, and only then does
 the card show name and email. With it on, a flow can email the participant
@@ -292,8 +349,7 @@ and never affects a booking.
 
 The **Account** page has a **Send test webhook** button. It sends a
 `webhook.test` event with example values in the same shape as real events,
-including a sample card. Paste it into Power Automate's _Parse JSON_ →
-_Generate from sample_.
+including a sample card, so you can check the flow end to end.
 
 ## Testing
 
