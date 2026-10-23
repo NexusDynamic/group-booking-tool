@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql, type SQL } from 'drizzle-orm';
 import { db } from './db';
 import { bookings, experiments, participants, sessions } from './db/schema';
 import { priorAttendanceExists } from './exclusions';
@@ -218,20 +218,40 @@ export async function cancelBookingByToken(
 	rawToken: string,
 	experimentId?: string
 ): Promise<Booking> {
-	const manageTokenHash = hashToken(rawToken);
+	return cancelBooking(eq(bookings.manageTokenHash, hashToken(rawToken)), {
+		experimentId,
+		source: 'public'
+	});
+}
+
+/**
+ * Admin-side cancellation of a single booking (e.g. the participant emailed
+ * in). Scoped to `sessionId` so a booking id from another session is
+ * rejected. Same semantics as {@link cancelBookingByToken}: idempotent, frees
+ * the seat immediately and emits `booking.cancelled`.
+ */
+export async function cancelBookingById(id: string, sessionId: string): Promise<Booking> {
+	return cancelBooking(and(eq(bookings.id, id), eq(bookings.sessionId, sessionId))!, {
+		source: 'admin'
+	});
+}
+
+function cancelBooking(
+	where: SQL,
+	opts: { experimentId?: string; source: BookingSource }
+): Booking {
 	const { booking, changed } = db.transaction((tx) => {
-		const booking = tx
-			.select()
-			.from(bookings)
-			.where(eq(bookings.manageTokenHash, manageTokenHash))
-			.all()[0];
+		const booking = tx.select().from(bookings).where(where).all()[0];
 		if (!booking) throw new BookingStateError('Booking not found');
 		const session = tx
 			.select({ experimentId: sessions.experimentId, capacity: sessions.capacity })
 			.from(sessions)
 			.where(eq(sessions.id, booking.sessionId))
 			.all()[0];
-		if (!session || (experimentId !== undefined && session.experimentId !== experimentId)) {
+		if (
+			!session ||
+			(opts.experimentId !== undefined && session.experimentId !== opts.experimentId)
+		) {
 			throw new BookingStateError('Booking not found');
 		}
 		if (booking.status === 'cancelled') return { booking, changed: null };
@@ -259,7 +279,7 @@ export async function cancelBookingByToken(
 			experimentId: changed.experimentId,
 			sessionId: booking.sessionId,
 			milestones: changed.milestones,
-			booking: { id: booking.id, source: 'public' },
+			booking: { id: booking.id, source: opts.source },
 			participant: { name: booking.snapshotName, email: booking.snapshotEmail }
 		});
 	}

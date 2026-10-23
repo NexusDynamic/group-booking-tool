@@ -7,7 +7,12 @@ import {
 	getSessionById,
 	updateSession
 } from '#lib/server/sessions.js';
-import { listBookingsForSession, setBookingStatus } from '#lib/server/bookings.js';
+import {
+	BookingStateError,
+	cancelBookingById,
+	listBookingsForSession,
+	setBookingStatus
+} from '#lib/server/bookings.js';
 import { sessionFormSchema } from '#lib/schemas/session.js';
 import { CLINIC_TZ, formatInTz, localToUtc, toClinicTzInput } from '#lib/server/time.js';
 import { formId, parseForm } from '#lib/server/validate.js';
@@ -79,6 +84,18 @@ export const actions: Actions = {
 	delete: async ({ params }) => {
 		await deleteSession(params.sessionId, params.id);
 		throw redirect(303, resolve(`experiments/${params.id}/sessions`));
+	},
+
+	cancelBooking: async ({ request, params }) => {
+		const id = formId(await request.formData(), 'bookingId');
+		if (!id) return fail(400, { error: 'Missing booking id' });
+		try {
+			await cancelBookingById(id, params.sessionId);
+		} catch (e) {
+			if (e instanceof BookingStateError) return fail(400, { error: e.message });
+			throw e;
+		}
+		return { bookingCancelled: true };
 	},
 
 	markAttended: attendanceAction('attended'),

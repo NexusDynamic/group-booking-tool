@@ -59,6 +59,9 @@
 {#if form?.cancelled}
 	<Alert variant="success">Session cancelled.</Alert>
 {/if}
+{#if form?.bookingCancelled}
+	<Alert variant="success">Booking cancelled — the seat is available again.</Alert>
+{/if}
 {#if form?.error}
 	<Alert variant="error">{form.error}</Alert>
 {/if}
@@ -119,6 +122,22 @@
 										<button
 											class="text-xs text-amber-700 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300"
 											>No-show</button
+										>
+									</form>
+									<form
+										method="post"
+										action="?/cancelBooking"
+										use:enhance
+										class="ml-2 inline"
+										onsubmit={(e) => {
+											if (!confirm('Cancel this booking? The seat will be freed for others.'))
+												e.preventDefault();
+										}}
+									>
+										<input type="hidden" name="bookingId" value={b.id} />
+										<button
+											class="text-xs text-red-700 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+											>Cancel booking</button
 										>
 									</form>
 								{:else if b.status === 'attended' || b.status === 'no_show'}

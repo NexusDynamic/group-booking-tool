@@ -16,6 +16,7 @@ const {
 	AlreadyBookedError,
 	BookingStateError,
 	createBooking,
+	cancelBookingById,
 	cancelBookingByToken,
 	findBookingByToken,
 	PriorAttendanceError,
@@ -391,6 +392,65 @@ describe('token and id scoping', () => {
 		expect(await setBookingStatus(booking.id, 'sess-2', 'attended')).toBe(false);
 		expect((await findBookingByToken(rawToken))?.status).toBe('confirmed');
 		expect(await setBookingStatus(booking.id, 'sess-1', 'attended')).toBe(true);
+	});
+});
+
+describe('cancelBookingById (admin)', () => {
+	async function book(email: string, sessionId = 'sess-1') {
+		const p = await upsertParticipant({ email, displayName: email });
+		return createBooking({
+			experimentId: 'exp-1',
+			sessionId,
+			participantId: p.id,
+			snapshotName: email,
+			snapshotEmail: email,
+			snapshotFields: {}
+		});
+	}
+
+	it('frees the seat on a full session immediately', async () => {
+		seedExperiment();
+		seedSession('sess-1', 'exp-1', 1);
+		const { booking } = await book('a@b.test');
+		await expect(book('b@b.test')).rejects.toBeInstanceOf(SessionFullError);
+
+		const cancelled = await cancelBookingById(booking.id, 'sess-1');
+		expect(cancelled.status).toBe('cancelled');
+		await expect(book('b@b.test')).resolves.toBeTruthy();
+	});
+
+	it('reverts the session status when it drops below the minimum', async () => {
+		seedExperiment();
+		seedSession('sess-1', 'exp-1', 5, 1);
+		const { booking } = await book('a@b.test');
+		expect(sessionStatus('sess-1')).toBe('confirmed');
+		await cancelBookingById(booking.id, 'sess-1');
+		expect(sessionStatus('sess-1')).toBe('scheduled');
+	});
+
+	it('is idempotent', async () => {
+		seedExperiment();
+		seedSession('sess-1', 'exp-1', 5);
+		const { booking } = await book('a@b.test');
+		await cancelBookingById(booking.id, 'sess-1');
+		expect((await cancelBookingById(booking.id, 'sess-1')).status).toBe('cancelled');
+	});
+
+	it('refuses a booking id from another session', async () => {
+		seedExperiment();
+		seedSession('sess-1', 'exp-1', 5);
+		seedSession('sess-2', 'exp-1', 5);
+		const { booking, rawToken } = await book('a@b.test');
+		await expect(cancelBookingById(booking.id, 'sess-2')).rejects.toBeInstanceOf(BookingStateError);
+		expect((await findBookingByToken(rawToken))?.status).toBe('confirmed');
+	});
+
+	it('refuses to cancel an attended booking', async () => {
+		seedExperiment();
+		seedSession('sess-1', 'exp-1', 5);
+		const { booking } = await book('a@b.test');
+		await setBookingStatus(booking.id, 'sess-1', 'attended');
+		await expect(cancelBookingById(booking.id, 'sess-1')).rejects.toBeInstanceOf(BookingStateError);
 	});
 });
 

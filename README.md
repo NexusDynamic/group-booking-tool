@@ -199,7 +199,7 @@ parameter, so treat it like a password.
 | Event                  | When                                                                                             |
 | ---------------------- | ------------------------------------------------------------------------------------------------ |
 | `booking.created`      | A participant books, or you assign a waiting preference (`booking.source` is `public` / `admin`) |
-| `booking.cancelled`    | A participant cancels from their link                                                            |
+| `booking.cancelled`    | A participant cancels from their link, or you cancel a booking in the admin (`booking.source`)   |
 | `preference.created`   | Someone submits availability and is waiting to be assigned                                       |
 | `preference.withdrawn` | A participant withdraws a pending preference                                                     |
 | `session.cancelled`    | You cancel a session in the admin (`session.booked` says how many people need telling)           |
